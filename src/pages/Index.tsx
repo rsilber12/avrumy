@@ -1,14 +1,18 @@
 import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
+import { motion } from "framer-motion";
 import avrumyAnimation from "@/assets/avrumy-logo-animation.mp4";
+import AnimatedText from "@/components/AnimatedText";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       {/* Logo Animation */}
-      <div 
-        className="mb-12 opacity-0 animate-fade-in"
-        style={{ animationDelay: "0.2s" }}
+      <motion.div 
+        className="mb-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
       >
         <video
           src={avrumyAnimation}
@@ -18,46 +22,49 @@ const Index = () => {
           playsInline
           className="w-40 h-40 md:w-52 md:h-52 object-contain"
         />
-      </div>
+      </motion.div>
 
       {/* Tagline */}
-      <div 
-        className="text-center mb-16 opacity-0 animate-fade-in-up"
-        style={{ animationDelay: "0.5s" }}
+      <motion.div 
+        className="text-center mb-16"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.5 }}
       >
-        <p className="text-foreground text-xl md:text-2xl lg:text-3xl font-light tracking-wide leading-relaxed max-w-xl">
-          We are Avrumy, a creative design studio
+        <p className="text-foreground text-xl md:text-2xl lg:text-3xl font-light tracking-wide leading-relaxed">
+          <AnimatedText text="We are Avrumy, a creative design studio" />
           <br />
-          located in New York City
+          <AnimatedText text="located in New York City" />
         </p>
-      </div>
+      </motion.div>
 
       {/* Navigation */}
-      <nav 
-        className="opacity-0 animate-fade-in-up"
-        style={{ animationDelay: "0.8s" }}
+      <motion.nav 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
       >
         <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-wide">
           <li>
-            <Link to="/design-gallery" className="nav-link inline-flex items-center">
+            <Link to="/design-gallery" className="nav-link inline-flex items-center group">
               <MoveRight className="nav-arrow w-4 h-4" />
-              Design Gallery
+              <span className="group-hover:text-cursor-blue transition-colors duration-300">Design Gallery</span>
             </Link>
           </li>
           <li>
-            <Link to="/music-artwork" className="nav-link inline-flex items-center">
+            <Link to="/music-artwork" className="nav-link inline-flex items-center group">
               <MoveRight className="nav-arrow w-4 h-4" />
-              Music Artwork
+              <span className="group-hover:text-cursor-blue transition-colors duration-300">Music Artwork</span>
             </Link>
           </li>
           <li>
-            <Link to="/contact" className="nav-link inline-flex items-center">
+            <Link to="/contact" className="nav-link inline-flex items-center group">
               <MoveRight className="nav-arrow w-4 h-4" />
-              Contact
+              <span className="group-hover:text-cursor-blue transition-colors duration-300">Contact</span>
             </Link>
           </li>
         </ul>
-      </nav>
+      </motion.nav>
     </div>
   );
 };
