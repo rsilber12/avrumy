@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const animationRef = useRef<number>();
 
   useEffect(() => {
     const updatePosition = (e: MouseEvent) => {
@@ -45,38 +47,59 @@ const CustomCursor = () => {
     };
   }, []);
 
+  // Smooth animation loop
+  useEffect(() => {
+    const animate = () => {
+      setSmoothPosition(prev => ({
+        x: prev.x + (position.x - prev.x) * 0.15,
+        y: prev.y + (position.y - prev.y) * 0.15,
+      }));
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [position]);
+
   if (!isVisible) return null;
+
+  const size = isHovering ? 40 : 20;
 
   return (
     <>
       {/* Main cursor ball */}
       <div
-        className="fixed pointer-events-none z-[9999] mix-blend-difference transition-transform duration-75 ease-out"
+        className="fixed pointer-events-none z-[9999]"
         style={{
-          left: position.x - (isHovering ? 20 : 10),
-          top: position.y - (isHovering ? 20 : 10),
+          left: smoothPosition.x - size / 2,
+          top: smoothPosition.y - size / 2,
+          width: size,
+          height: size,
+          backgroundColor: "hsl(200, 80%, 50%)",
+          borderRadius: "50%",
+          opacity: isHovering ? 0.7 : 0.9,
+          transition: "width 0.3s ease, height 0.3s ease, opacity 0.3s ease",
         }}
-      >
-        <div 
-          className="rounded-full bg-cursor-blue transition-all duration-200"
-          style={{
-            width: isHovering ? 40 : 20,
-            height: isHovering ? 40 : 20,
-            opacity: isHovering ? 0.8 : 1,
-          }}
-        />
-      </div>
+      />
       
-      {/* Trailing cursor */}
+      {/* Trailing dot */}
       <div
-        className="fixed pointer-events-none z-[9998] transition-all duration-150 ease-out"
+        className="fixed pointer-events-none z-[9998]"
         style={{
-          left: position.x - 4,
-          top: position.y - 4,
+          left: smoothPosition.x - 3 + (position.x - smoothPosition.x) * -0.3,
+          top: smoothPosition.y - 3 + (position.y - smoothPosition.y) * -0.3,
+          width: 6,
+          height: 6,
+          backgroundColor: "hsl(200, 80%, 50%)",
+          borderRadius: "50%",
+          opacity: 0.4,
         }}
-      >
-        <div className="w-2 h-2 rounded-full bg-cursor-blue opacity-50" />
-      </div>
+      />
     </>
   );
 };
