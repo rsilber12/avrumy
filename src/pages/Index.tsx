@@ -40,7 +40,7 @@ const Index = () => {
         className="animate-fade-in-up mt-2 sm:mt-4"
         style={{ animationDelay: "0.8s" }}
       >
-        <ul className="flex flex-col md:flex-row items-center gap-4 sm:gap-6 md:gap-12 text-base sm:text-lg tracking-tight">
+        <ul className="flex flex-col md:flex-row items-center gap-4 sm:gap-6 md:gap-12 text-base sm:text-lg tracking-tight font-sans">
           <li>
             <Link to="/design-gallery" className="nav-link inline-flex items-center group">
               <MoveRight className="nav-arrow w-4 h-4" />

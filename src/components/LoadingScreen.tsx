@@ -28,7 +28,7 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
         isExiting ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="text-foreground text-2xl sm:text-3xl font-light tracking-tight animate-pulse">
+      <div className="text-foreground text-2xl sm:text-3xl font-light tracking-tight animate-pulse font-sans">
         Avrumy
       </div>
     </div>
