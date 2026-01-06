@@ -99,16 +99,11 @@
 @layer base {
   * {
     @apply border-border;
-    cursor: none;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'NibPro', serif;
-  }
-
-  a, button {
-    cursor: none;
   }
 }
 
