@@ -26,7 +26,7 @@ const Index = () => {
         className="text-center mb-20 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
-        <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light leading-[1.8] tracking-tight">
+        <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light leading-[2.4] tracking-tight">
           <AnimatedText text="We are Avrumy," />
           <br />
           <AnimatedText text="a creative design studio" />
