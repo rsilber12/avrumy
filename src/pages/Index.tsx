@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { MoveRight } from "lucide-react";
 import avrumyAnimation from "@/assets/avrumy-logo-animation.mp4";
 
 const Index = () => {
@@ -36,19 +37,22 @@ const Index = () => {
         className="opacity-0 animate-fade-in-up"
         style={{ animationDelay: "0.8s" }}
       >
-        <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-widest uppercase">
+        <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-wide">
           <li>
-            <Link to="/design-gallery" className="nav-link">
+            <Link to="/design-gallery" className="nav-link inline-flex items-center">
+              <MoveRight className="nav-arrow w-4 h-4" />
               Design Gallery
             </Link>
           </li>
           <li>
-            <Link to="/music-artwork" className="nav-link">
+            <Link to="/music-artwork" className="nav-link inline-flex items-center">
+              <MoveRight className="nav-arrow w-4 h-4" />
               Music Artwork
             </Link>
           </li>
           <li>
-            <Link to="/contact" className="nav-link">
+            <Link to="/contact" className="nav-link inline-flex items-center">
+              <MoveRight className="nav-arrow w-4 h-4" />
               Contact
             </Link>
           </li>

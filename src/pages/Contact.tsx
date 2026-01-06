@@ -10,7 +10,7 @@ const Contact = () => {
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="tracking-widest uppercase text-sm">Back</span>
+        <span className="text-sm">Back</span>
       </Link>
 
       {/* Main Content */}
@@ -28,7 +28,7 @@ const Contact = () => {
 
           <a 
             href="mailto:hello@avrumy.com" 
-            className="inline-block text-foreground text-xl md:text-2xl font-light tracking-wide hover:text-accent transition-colors duration-300"
+            className="inline-block text-foreground text-xl md:text-2xl font-light tracking-wide hover:text-muted-foreground transition-colors duration-300"
           >
             hello@avrumy.com
           </a>
@@ -36,7 +36,7 @@ const Contact = () => {
 
         {/* Location */}
         <div className="mt-20 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
-          <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2">
+          <p className="text-muted-foreground text-sm mb-2">
             Based in
           </p>
           <p className="text-foreground text-lg font-light">
@@ -46,7 +46,7 @@ const Contact = () => {
       </div>
 
       {/* Footer */}
-      <footer className="text-center text-muted-foreground text-sm tracking-widest mt-auto pt-12 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
+      <footer className="text-center text-muted-foreground text-sm mt-auto pt-12 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
         © {new Date().getFullYear()} Avrumy
       </footer>
     </div>
