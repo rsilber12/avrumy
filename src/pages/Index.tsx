@@ -20,7 +20,7 @@ const Index = () => {
           loop
           muted
           playsInline
-          className="w-40 h-40 md:w-52 md:h-52 object-contain"
+          className="w-56 h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 object-contain"
         />
       </motion.div>
 
@@ -31,9 +31,9 @@ const Index = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.5 }}
       >
-        <p className="text-foreground text-xl md:text-2xl lg:text-3xl font-light tracking-wide leading-relaxed">
+        <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide leading-relaxed">
           <AnimatedText text="We are Avrumy, a creative design studio" />
-          <br />
+          <br className="hidden md:block" />
           <AnimatedText text="located in New York City" />
         </p>
       </motion.div>
