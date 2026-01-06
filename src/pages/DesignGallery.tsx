@@ -10,7 +10,7 @@ const DesignGallery = () => {
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="tracking-widest uppercase text-sm">Back</span>
+        <span className="text-sm">Back</span>
       </Link>
 
       {/* Header */}
@@ -33,7 +33,7 @@ const DesignGallery = () => {
               style={{ animationDelay: `${0.3 + index * 0.1}s` }}
             >
               <div className="w-full h-full flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors duration-300">
-                <span className="text-sm tracking-widest uppercase">Project {item}</span>
+                <span className="text-sm">Project {item}</span>
               </div>
             </div>
           ))}
@@ -41,7 +41,7 @@ const DesignGallery = () => {
       </div>
 
       {/* Coming Soon Note */}
-      <p className="text-center text-muted-foreground mt-20 text-sm tracking-widest uppercase opacity-0 animate-fade-in" style={{ animationDelay: "1s" }}>
+      <p className="text-center text-muted-foreground mt-20 text-sm opacity-0 animate-fade-in" style={{ animationDelay: "1s" }}>
         More projects coming soon
       </p>
     </div>

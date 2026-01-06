@@ -4,6 +4,14 @@
 
 /* Avrumy Design System - Elegant, Minimal, Sophisticated */
 
+@font-face {
+  font-family: 'NibPro';
+  src: url('/fonts/NibPro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -93,27 +101,20 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Cormorant Garamond', serif;
-  }
-}
-
-@layer utilities {
-  .font-serif-elegant {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'NibPro', serif;
   }
 }
 
 @layer components {
   .nav-link {
-    @apply relative text-muted-foreground transition-colors duration-300 hover:text-foreground;
+    @apply relative text-muted-foreground transition-all duration-300 hover:text-foreground;
   }
 
-  .nav-link::after {
-    content: '';
-    @apply absolute bottom-0 left-0 h-px w-0 bg-foreground transition-all duration-300;
+  .nav-link .nav-arrow {
+    @apply inline-block transition-transform duration-300 mr-2;
   }
 
-  .nav-link:hover::after {
-    @apply w-full;
+  .nav-link:hover .nav-arrow {
+    @apply translate-x-1;
   }
 }
