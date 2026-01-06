@@ -27,9 +27,10 @@ const Index = () => {
         style={{ animationDelay: "0.5s" }}
       >
         <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light leading-[1.8] tracking-tight">
-          <AnimatedText text="We are Avrumy, a creative design studio" />
-          <br className="hidden md:block" />
-          <span className="md:hidden"> </span>
+          <AnimatedText text="We are Avrumy," />
+          <br />
+          <AnimatedText text="a creative design studio" />
+          <br />
           <AnimatedText text="located in New York City" />
         </p>
       </div>
