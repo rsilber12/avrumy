@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
-import { motion } from "framer-motion";
 import avrumyAnimation from "@/assets/avrumy-logo-animation.mp4";
 import AnimatedText from "@/components/AnimatedText";
 
@@ -8,11 +7,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       {/* Logo Animation */}
-      <motion.div 
-        className="mb-12"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
+      <div 
+        className="mb-12 animate-fade-in"
+        style={{ animationDelay: "0.2s" }}
       >
         <video
           src={avrumyAnimation}
@@ -22,27 +19,24 @@ const Index = () => {
           playsInline
           className="w-56 h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 object-contain"
         />
-      </motion.div>
+      </div>
 
       {/* Tagline */}
-      <motion.div 
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
+      <div 
+        className="text-center mb-16 animate-fade-in-up"
+        style={{ animationDelay: "0.5s" }}
       >
         <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide leading-relaxed">
           <AnimatedText text="We are Avrumy, a creative design studio" />
           <br className="hidden md:block" />
           <AnimatedText text="located in New York City" />
         </p>
-      </motion.div>
+      </div>
 
       {/* Navigation */}
-      <motion.nav 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.8 }}
+      <nav 
+        className="animate-fade-in-up"
+        style={{ animationDelay: "0.8s" }}
       >
         <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-wide">
           <li>
@@ -64,7 +58,7 @@ const Index = () => {
             </Link>
           </li>
         </ul>
-      </motion.nav>
+      </nav>
     </div>
   );
 };

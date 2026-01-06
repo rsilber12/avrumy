@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 
 const CustomCursor = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const updatePosition = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY });
+      setIsVisible(true);
     };
 
     const handleMouseOver = (e: MouseEvent) => {
@@ -27,32 +28,33 @@ const CustomCursor = () => {
       setIsHovering(false);
     };
 
-    window.addEventListener("mousemove", updateMousePosition);
+    const handleMouseLeave = () => {
+      setIsVisible(false);
+    };
+
+    window.addEventListener("mousemove", updatePosition);
     document.addEventListener("mouseover", handleMouseOver);
     document.addEventListener("mouseout", handleMouseOut);
+    document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      window.removeEventListener("mousemove", updateMousePosition);
+      window.removeEventListener("mousemove", updatePosition);
       document.removeEventListener("mouseover", handleMouseOver);
       document.removeEventListener("mouseout", handleMouseOut);
+      document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
+
+  if (!isVisible) return null;
 
   return (
     <>
       {/* Main cursor ball */}
-      <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
-        animate={{
-          x: mousePosition.x - (isHovering ? 20 : 10),
-          y: mousePosition.y - (isHovering ? 20 : 10),
-          scale: isHovering ? 1 : 1,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 500,
-          damping: 28,
-          mass: 0.5,
+      <div
+        className="fixed pointer-events-none z-[9999] mix-blend-difference transition-transform duration-75 ease-out"
+        style={{
+          left: position.x - (isHovering ? 20 : 10),
+          top: position.y - (isHovering ? 20 : 10),
         }}
       >
         <div 
@@ -63,26 +65,18 @@ const CustomCursor = () => {
             opacity: isHovering ? 0.8 : 1,
           }}
         />
-      </motion.div>
+      </div>
       
       {/* Trailing cursor */}
-      <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9998]"
-        animate={{
-          x: mousePosition.x - 4,
-          y: mousePosition.y - 4,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 150,
-          damping: 15,
-          mass: 0.1,
+      <div
+        className="fixed pointer-events-none z-[9998] transition-all duration-150 ease-out"
+        style={{
+          left: position.x - 4,
+          top: position.y - 4,
         }}
       >
-        <div 
-          className="w-2 h-2 rounded-full bg-cursor-blue opacity-50"
-        />
-      </motion.div>
+        <div className="w-2 h-2 rounded-full bg-cursor-blue opacity-50" />
+      </div>
     </>
   );
 };
