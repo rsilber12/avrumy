@@ -23,22 +23,23 @@ const Index = () => {
 
       {/* Tagline */}
       <div 
-        className="text-center mb-16 animate-fade-in-up"
+        className="text-center mb-20 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
-        <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide leading-relaxed">
+        <p className="text-foreground text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light leading-[1.8] tracking-tight">
           <AnimatedText text="We are Avrumy, a creative design studio" />
           <br className="hidden md:block" />
+          <span className="md:hidden"> </span>
           <AnimatedText text="located in New York City" />
         </p>
       </div>
 
       {/* Navigation */}
       <nav 
-        className="animate-fade-in-up"
+        className="animate-fade-in-up mt-4"
         style={{ animationDelay: "0.8s" }}
       >
-        <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-wide">
+        <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-12 text-lg tracking-tight">
           <li>
             <Link to="/design-gallery" className="nav-link inline-flex items-center group">
               <MoveRight className="nav-arrow w-4 h-4" />
