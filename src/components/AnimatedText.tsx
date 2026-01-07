@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface AnimatedTextProps {
   text: string;
@@ -12,64 +12,68 @@ const AnimatedText = ({
   text, 
   className = "", 
   delay = 0,
-  speed = 80,
+  speed = 55,
   storageKey
 }: AnimatedTextProps) => {
-  const [displayedText, setDisplayedText] = useState("");
-  const [showCursor, setShowCursor] = useState(false);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
+  const [displayedText, setDisplayedText] = useState(() => {
     // Check if animation was already played in this session
     if (storageKey) {
       const alreadyPlayed = sessionStorage.getItem(`typewriter-${storageKey}`);
       if (alreadyPlayed) {
-        setDisplayedText(text);
-        return;
+        return text;
       }
     }
+    return "";
+  });
+  const [showCursor, setShowCursor] = useState(false);
+  const [isComplete, setIsComplete] = useState(() => {
+    if (storageKey) {
+      return !!sessionStorage.getItem(`typewriter-${storageKey}`);
+    }
+    return false;
+  });
 
-    // Prevent double animation in strict mode
-    if (hasAnimated.current) return;
-    hasAnimated.current = true;
+  useEffect(() => {
+    // Skip if already complete
+    if (isComplete) return;
 
     let currentIndex = 0;
     let typeInterval: ReturnType<typeof setInterval>;
+    let cursorTimeout: ReturnType<typeof setTimeout>;
 
     const startDelay = setTimeout(() => {
       setShowCursor(true);
       
       typeInterval = setInterval(() => {
         if (currentIndex < text.length) {
-          setDisplayedText(text.slice(0, currentIndex + 1));
           currentIndex++;
+          setDisplayedText(text.slice(0, currentIndex));
         } else {
           clearInterval(typeInterval);
-          // Keep cursor visible briefly, then hide
-          setTimeout(() => {
+          cursorTimeout = setTimeout(() => {
             setShowCursor(false);
-            // Mark as played
+            setIsComplete(true);
             if (storageKey) {
-              sessionStorage.setItem(`typewriter-${storageKey}`, 'true');
+              sessionStorage.setItem(`typewriter-${storageKey}`, "true");
             }
-          }, 300);
+          }, 400);
         }
       }, speed);
     }, delay);
 
     return () => {
       clearTimeout(startDelay);
+      clearTimeout(cursorTimeout);
       clearInterval(typeInterval);
     };
-  }, [text, delay, speed, storageKey]);
+  }, [text, delay, speed, storageKey, isComplete]);
 
   return (
     <span className={className}>
       {displayedText}
       {showCursor && (
         <span 
-          className="inline-block w-[2px] h-[0.85em] bg-foreground/60 ml-[2px] align-middle"
-          style={{ animation: 'pulse 1s ease-in-out infinite' }}
+          className="inline-block w-[2px] h-[0.85em] bg-foreground/70 ml-[2px] align-middle animate-pulse"
         />
       )}
     </span>
