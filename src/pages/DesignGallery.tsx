@@ -75,6 +75,11 @@ const DesignGallery = () => {
           <p className="text-center text-muted-foreground">No projects added yet</p>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };

@@ -9,14 +9,19 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+      <div className="text-center flex-1 flex flex-col items-center justify-center">
+        <h1 className="mb-4 text-4xl font-light">404</h1>
         <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
+        <a href="/" className="text-foreground hover:text-muted-foreground transition-colors">
           Return to Home
         </a>
       </div>
+
+      {/* Footer */}
+      <footer className="text-center text-muted-foreground text-sm py-12">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };

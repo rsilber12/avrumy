@@ -77,6 +77,11 @@ const MusicArtwork = () => {
           <p className="text-center text-muted-foreground">No artwork added yet</p>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };

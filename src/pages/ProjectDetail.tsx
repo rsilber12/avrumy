@@ -120,6 +120,11 @@ const ProjectDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };
