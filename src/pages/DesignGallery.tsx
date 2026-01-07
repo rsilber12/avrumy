@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageVisit } from "@/hooks/useAnalytics";
-import GradientBackground from "@/components/GradientBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import GlowingCard from "@/components/GlowingCard";
 
@@ -26,9 +25,7 @@ const DesignGallery = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12 relative overflow-hidden">
-      <GradientBackground />
-      
+    <div className="min-h-screen bg-background px-6 py-12">
       {/* Back Navigation */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -39,9 +36,7 @@ const DesignGallery = () => {
           to="/" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16 group"
         >
-          <motion.span whileHover={{ x: -4 }} transition={{ duration: 0.2 }}>
-            <ArrowLeft className="w-4 h-4" />
-          </motion.span>
+          <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back</span>
         </Link>
       </motion.div>
@@ -50,18 +45,12 @@ const DesignGallery = () => {
       <header className="max-w-4xl mx-auto text-center mb-20">
         <motion.h1 
           className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal"
-          initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           Design
         </motion.h1>
-        <motion.div
-          className="mt-4 w-24 h-px bg-gradient-to-r from-transparent via-muted-foreground/50 to-transparent mx-auto"
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
       </header>
 
       {/* Gallery Grid - Masonry Style */}
@@ -69,18 +58,15 @@ const DesignGallery = () => {
         {isLoading ? (
           <div className="columns-2 lg:columns-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-              <motion.div 
+              <div 
                 key={item} 
                 className="break-inside-avoid mb-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: item * 0.1 }}
               >
                 <div 
-                  className="bg-secondary/50 rounded-xl animate-pulse backdrop-blur-sm"
+                  className="bg-secondary rounded-xl animate-pulse"
                   style={{ aspectRatio: Math.random() > 0.5 ? "3/4" : "4/3" }}
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         ) : projects && projects.length > 0 ? (
@@ -90,7 +76,6 @@ const DesignGallery = () => {
                 key={project.id}
                 delay={index * 0.05}
                 scale
-                blur
                 className="break-inside-avoid mb-4"
               >
                 <GlowingCard className="rounded-xl cursor-pointer">
@@ -112,22 +97,14 @@ const DesignGallery = () => {
             ))}
           </div>
         ) : (
-          <motion.p 
-            className="text-center text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            No projects added yet
-          </motion.p>
+          <p className="text-center text-muted-foreground">No projects added yet</p>
         )}
       </div>
 
       {/* Footer */}
-      <ScrollReveal delay={0.2} className="mt-20">
-        <footer className="text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Avrumy, LLC
-        </footer>
-      </ScrollReveal>
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };
