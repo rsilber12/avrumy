@@ -39,7 +39,7 @@ const DesignGallery = () => {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
               <div key={item} className="break-inside-avoid mb-4">
                 <div 
-                  className="bg-secondary rounded-sm animate-pulse"
+                  className="bg-secondary rounded-lg animate-pulse"
                   style={{ aspectRatio: Math.random() > 0.5 ? "3/4" : "4/3" }}
                 />
               </div>
@@ -54,7 +54,7 @@ const DesignGallery = () => {
                 style={{ animationDelay: `${0.1 + index * 0.05}s` }}
                 onClick={() => navigate(`/project/${project.id}`)}
               >
-                <div className="overflow-hidden rounded-sm">
+                <div className="overflow-hidden rounded-lg">
                   <img
                     src={project.main_image_url}
                     alt={project.title || "Gallery project"}
