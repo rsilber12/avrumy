@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePageVisit, trackEmailClick } from "@/hooks/useAnalytics";
 
@@ -22,8 +21,7 @@ const Contact = () => {
           to="/" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16 group"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
+          <span className="text-sm">← Back</span>
         </Link>
       </motion.div>
 
@@ -53,14 +51,11 @@ const Contact = () => {
           <motion.a 
             href="mailto:mail@avrumy.com" 
             onClick={handleEmailClick}
-            className="inline-flex items-center gap-3 text-foreground text-xl md:text-2xl font-light tracking-wide hover:text-muted-foreground transition-colors duration-300 group"
+            className="inline-block text-foreground text-xl md:text-2xl font-light tracking-wide hover:text-muted-foreground transition-colors duration-300"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <span className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="w-5 h-5" />
-            </span>
-            <span>mail@avrumy.com</span>
+            mail@avrumy.com
           </motion.a>
         </motion.div>
 
@@ -71,10 +66,7 @@ const Contact = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex items-center gap-2 justify-center text-muted-foreground text-sm mb-2">
-            <MapPin className="w-4 h-4" />
-            <span>Based in</span>
-          </div>
+          <p className="text-muted-foreground text-sm mb-2">Based in</p>
           <p className="text-foreground text-lg font-light">
             New York City
           </p>
