@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import GradientBackground from "@/components/GradientBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 
 const ProjectDetail = () => {
@@ -41,14 +40,13 @@ const ProjectDetail = () => {
 
   if (projectLoading) {
     return (
-      <div className="min-h-screen bg-background px-6 py-12 relative overflow-hidden">
-        <GradientBackground />
+      <div className="min-h-screen bg-background px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-secondary/50 rounded w-24 mb-16" />
-            <div className="aspect-video bg-secondary/50 rounded-xl mb-8" />
-            <div className="h-8 bg-secondary/50 rounded w-1/2 mb-4" />
-            <div className="h-4 bg-secondary/50 rounded w-3/4" />
+            <div className="h-8 bg-secondary rounded w-24 mb-16" />
+            <div className="aspect-video bg-secondary rounded-xl mb-8" />
+            <div className="h-8 bg-secondary rounded w-1/2 mb-4" />
+            <div className="h-4 bg-secondary rounded w-3/4" />
           </div>
         </div>
       </div>
@@ -57,8 +55,7 @@ const ProjectDetail = () => {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-background px-6 py-12 flex items-center justify-center relative overflow-hidden">
-        <GradientBackground />
+      <div className="min-h-screen bg-background px-6 py-12 flex items-center justify-center">
         <motion.div 
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -74,9 +71,7 @@ const ProjectDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12 relative overflow-hidden">
-      <GradientBackground />
-      
+    <div className="min-h-screen bg-background px-6 py-12">
       {/* Back Navigation */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -87,16 +82,14 @@ const ProjectDetail = () => {
           to="/design-gallery" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16"
         >
-          <motion.span whileHover={{ x: -4 }}>
-            <ArrowLeft className="w-4 h-4" />
-          </motion.span>
+          <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back</span>
         </Link>
       </motion.div>
 
       <div className="max-w-4xl mx-auto">
         {/* Main Image */}
-        <ScrollReveal scale blur>
+        <ScrollReveal scale>
           <motion.img
             src={project.main_image_url}
             alt={project.title || "Project"}
@@ -126,7 +119,7 @@ const ProjectDetail = () => {
         {subImages && subImages.length > 0 && (
           <div className="space-y-8">
             {subImages.map((image, index) => (
-              <ScrollReveal key={image.id} delay={index * 0.1} scale blur>
+              <ScrollReveal key={image.id} delay={index * 0.1} scale>
                 <motion.img
                   src={image.image_url}
                   alt={`Project image ${index + 1}`}
@@ -141,11 +134,9 @@ const ProjectDetail = () => {
       </div>
 
       {/* Footer */}
-      <ScrollReveal delay={0.2} className="mt-20">
-        <footer className="text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Avrumy, LLC
-        </footer>
-      </ScrollReveal>
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };

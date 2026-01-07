@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageVisit } from "@/hooks/useAnalytics";
-import GradientBackground from "@/components/GradientBackground";
 import ScrollReveal from "@/components/ScrollReveal";
 import GlowingCard from "@/components/GlowingCard";
 
@@ -25,9 +24,7 @@ const Websites = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12 relative overflow-hidden">
-      <GradientBackground />
-      
+    <div className="min-h-screen bg-background px-6 py-12">
       {/* Back Navigation */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -38,9 +35,7 @@ const Websites = () => {
           to="/" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300 mb-16 group"
         >
-          <motion.span whileHover={{ x: -4 }} transition={{ duration: 0.2 }}>
-            <ArrowLeft className="w-4 h-4" />
-          </motion.span>
+          <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back</span>
         </Link>
       </motion.div>
@@ -49,18 +44,12 @@ const Websites = () => {
       <div className="max-w-6xl mx-auto mb-16">
         <motion.h1 
           className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal text-center"
-          initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           Websites
         </motion.h1>
-        <motion.div
-          className="mt-4 w-24 h-px bg-gradient-to-r from-transparent via-muted-foreground/50 to-transparent mx-auto"
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
       </div>
 
       {/* Gallery Grid */}
@@ -68,15 +57,10 @@ const Websites = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[1, 2, 3, 4].map((item) => (
-              <motion.div 
-                key={item}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: item * 0.1 }}
-              >
-                <div className="aspect-video bg-secondary/50 rounded-xl animate-pulse backdrop-blur-sm" />
-                <div className="h-4 bg-secondary/50 rounded mt-4 w-3/4 animate-pulse" />
-              </motion.div>
+              <div key={item}>
+                <div className="aspect-video bg-secondary rounded-xl animate-pulse" />
+                <div className="h-4 bg-secondary rounded mt-4 w-3/4 animate-pulse" />
+              </div>
             ))}
           </div>
         ) : websites && websites.length > 0 ? (
@@ -86,7 +70,6 @@ const Websites = () => {
                 key={website.id}
                 delay={index * 0.1}
                 scale
-                blur
                 direction={index % 2 === 0 ? "left" : "right"}
               >
                 <GlowingCard className="rounded-xl">
@@ -108,34 +91,25 @@ const Websites = () => {
                         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                       />
                     </motion.div>
-                    <motion.p 
-                      className="text-foreground text-sm font-light tracking-wide group-hover:text-muted-foreground transition-colors duration-300"
-                      whileHover={{ x: 4 }}
-                    >
+                    <p className="text-foreground text-sm font-light tracking-wide group-hover:text-muted-foreground transition-colors duration-300">
                       {website.title}
-                    </motion.p>
+                    </p>
                   </a>
                 </GlowingCard>
               </ScrollReveal>
             ))}
           </div>
         ) : (
-          <motion.div 
-            className="text-center py-20 text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
+          <div className="text-center py-20 text-muted-foreground">
             No websites yet
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Footer */}
-      <ScrollReveal delay={0.2} className="mt-20">
-        <footer className="text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Avrumy, LLC
-        </footer>
-      </ScrollReveal>
+      <footer className="text-center text-muted-foreground text-sm mt-20">
+        © {new Date().getFullYear()} Avrumy, LLC
+      </footer>
     </div>
   );
 };
