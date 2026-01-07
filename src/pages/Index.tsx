@@ -36,22 +36,28 @@ const Index = () => {
       </div>
 
       {/* Navigation */}
-      <nav 
-        className="animate-fade-in-up mt-2 sm:mt-4"
-        style={{ animationDelay: "0.8s" }}
-      >
+      <nav className="mt-2 sm:mt-4">
         <ul className="flex flex-col md:flex-row items-center gap-4 sm:gap-6 md:gap-12 text-base sm:text-lg tracking-tight font-sans">
-          <li>
+          <li 
+            className="opacity-0 animate-fade-in"
+            style={{ animationDelay: "7s", animationFillMode: "forwards" }}
+          >
             <Link to="/design-gallery" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Design Gallery</span>
             </Link>
           </li>
-          <li>
+          <li 
+            className="opacity-0 animate-fade-in"
+            style={{ animationDelay: "7.3s", animationFillMode: "forwards" }}
+          >
             <Link to="/music-artwork" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Music Artwork</span>
             </Link>
           </li>
-          <li>
+          <li 
+            className="opacity-0 animate-fade-in"
+            style={{ animationDelay: "7.6s", animationFillMode: "forwards" }}
+          >
             <Link to="/contact" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Contact</span>
             </Link>
