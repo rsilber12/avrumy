@@ -44,7 +44,7 @@ const Index = () => {
             style={{ animationDelay: "8.5s", animationFillMode: "forwards" }}
           >
             <Link to="/design-gallery" className="nav-link group">
-              <span className="group-hover:text-cursor-blue transition-colors duration-300">Design Gallery</span>
+              <span className="group-hover:text-cursor-blue transition-colors duration-300">Design</span>
             </Link>
           </li>
           <li 
