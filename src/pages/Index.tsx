@@ -17,7 +17,7 @@ const Index = () => {
           loop
           muted
           playsInline
-          className="w-32 h-32 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 object-contain"
+          className="w-48 h-48 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 object-contain"
         />
       </div>
 
@@ -27,11 +27,11 @@ const Index = () => {
         style={{ animationDelay: "0.5s" }}
       >
         <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.6] sm:leading-[1.8] tracking-tight">
-          <AnimatedText text="We are Avrumy," delay={500} speed={60} />
+          <AnimatedText text="We are Avrumy," delay={500} speed={90} />
           <br />
-          <AnimatedText text="a creative design studio" delay={1500} speed={60} />
+          <AnimatedText text="a creative design studio" delay={2000} speed={90} />
           <br />
-          <AnimatedText text="located in New York City" delay={3000} speed={60} />
+          <AnimatedText text="located in New York City" delay={4500} speed={90} />
         </p>
       </div>
 
