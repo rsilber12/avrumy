@@ -29,12 +29,12 @@ const Index = () => {
         className="text-center mb-10 sm:mb-20 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
-        <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[2.4] sm:leading-[2.6] tracking-tight">
-          <AnimatedText text="We are Avrumy," delay={500} speed={120} storageKey="line1" />
+        <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[2.6] sm:leading-[2.8] tracking-tight">
+          <AnimatedText text="We are Avrumy," delay={600} speed={70} storageKey="line1" />
           <br />
-          <AnimatedText text="a creative design studio" delay={2500} speed={120} storageKey="line2" />
+          <AnimatedText text="a creative design studio" delay={2000} speed={65} storageKey="line2" />
           <br />
-          <AnimatedText text="located in New York City" delay={5500} speed={120} storageKey="line3" />
+          <AnimatedText text="located in New York City" delay={4200} speed={65} storageKey="line3" />
         </p>
       </div>
 
@@ -43,7 +43,7 @@ const Index = () => {
         <ul className="flex flex-col md:flex-row items-center gap-4 sm:gap-6 md:gap-12 text-base sm:text-lg tracking-tight font-sans">
           <li 
             className="opacity-0 animate-fade-in"
-            style={{ animationDelay: "9s", animationFillMode: "forwards" }}
+            style={{ animationDelay: "6.5s", animationFillMode: "forwards" }}
           >
             <Link to="/design-gallery" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Design Gallery</span>
@@ -51,7 +51,15 @@ const Index = () => {
           </li>
           <li 
             className="opacity-0 animate-fade-in"
-            style={{ animationDelay: "9.3s", animationFillMode: "forwards" }}
+            style={{ animationDelay: "6.7s", animationFillMode: "forwards" }}
+          >
+            <Link to="/websites" className="nav-link group">
+              <span className="group-hover:text-cursor-blue transition-colors duration-300">Websites</span>
+            </Link>
+          </li>
+          <li 
+            className="opacity-0 animate-fade-in"
+            style={{ animationDelay: "6.9s", animationFillMode: "forwards" }}
           >
             <Link to="/music-artwork" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Music Artwork</span>
@@ -59,7 +67,7 @@ const Index = () => {
           </li>
           <li 
             className="opacity-0 animate-fade-in"
-            style={{ animationDelay: "9.6s", animationFillMode: "forwards" }}
+            style={{ animationDelay: "7.1s", animationFillMode: "forwards" }}
           >
             <Link to="/contact" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Contact</span>

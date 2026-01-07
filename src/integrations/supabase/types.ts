@@ -157,6 +157,39 @@ export type Database = {
         }
         Relationships: []
       }
+      websites: {
+        Row: {
+          created_at: string
+          custom_thumbnail_url: string | null
+          display_order: number | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          custom_thumbnail_url?: string | null
+          display_order?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          custom_thumbnail_url?: string | null
+          display_order?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
