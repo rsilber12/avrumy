@@ -15,7 +15,7 @@ const Contact = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto text-center">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-12 opacity-0 animate-fade-in-up">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal mb-12 opacity-0 animate-fade-in-up">
           Get in Touch
         </h1>
 

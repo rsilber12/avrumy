@@ -89,7 +89,7 @@ const ProjectDetail = () => {
         {(project.title || project.description) && (
           <div className="opacity-0 animate-fade-in-up mb-16" style={{ animationDelay: "0.2s" }}>
             {project.title && (
-              <h1 className="text-3xl md:text-4xl font-light tracking-wide mb-6">
+              <h1 className="text-3xl md:text-4xl font-light tracking-normal mb-6">
                 {project.title}
               </h1>
             )}

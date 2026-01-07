@@ -30,7 +30,7 @@ const MusicArtwork = () => {
 
       {/* Header */}
       <header className="max-w-4xl mx-auto text-center mb-20">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-6 opacity-0 animate-fade-in-up">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal mb-6 opacity-0 animate-fade-in-up">
           Music Artwork
         </h1>
         <p className="text-muted-foreground text-lg md:text-xl font-light opacity-0 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
