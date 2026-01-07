@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Globe, Mail, Users } from "lucide-react";
+import { BarChart3, Globe, Mail, Users, TrendingUp } from "lucide-react";
 
 const AnalyticsAdmin = () => {
   const { data: totalVisits } = useQuery({
@@ -88,102 +87,132 @@ const AnalyticsAdmin = () => {
     },
   });
 
+  const StatCard = ({ 
+    title, 
+    value, 
+    icon: Icon, 
+    gradient 
+  }: { 
+    title: string; 
+    value: number | string; 
+    icon: React.ElementType;
+    gradient: string;
+  }) => (
+    <div className="group relative overflow-hidden rounded-2xl bg-card border border-border/50 p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
+      <div className={`absolute inset-0 opacity-5 ${gradient}`} />
+      <div className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-muted-foreground font-medium">{title}</span>
+          <div className="p-2 rounded-xl bg-muted/50">
+            <Icon className="w-4 h-4 text-muted-foreground" />
+          </div>
+        </div>
+        <p className="text-4xl font-light tracking-tight">{value}</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8 font-sans">
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Visitors</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{totalVisits ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{todayVisits ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Countries</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{countryData?.length ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Email Clicks</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{emailClicks ?? 0}</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          title="Total Visitors" 
+          value={totalVisits ?? 0} 
+          icon={Users}
+          gradient="bg-gradient-to-br from-blue-500 to-cyan-500"
+        />
+        <StatCard 
+          title="Today" 
+          value={todayVisits ?? 0} 
+          icon={TrendingUp}
+          gradient="bg-gradient-to-br from-green-500 to-emerald-500"
+        />
+        <StatCard 
+          title="Countries" 
+          value={countryData?.length ?? 0} 
+          icon={Globe}
+          gradient="bg-gradient-to-br from-purple-500 to-pink-500"
+        />
+        <StatCard 
+          title="Email Clicks" 
+          value={emailClicks ?? 0} 
+          icon={Mail}
+          gradient="bg-gradient-to-br from-orange-500 to-red-500"
+        />
       </div>
 
-      {/* Countries */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">Visitors by Country</CardTitle>
-          <CardDescription className="text-sm">Top 10 countries</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {countryData && countryData.length > 0 ? (
-            <div className="space-y-3">
-              {countryData.map((item) => (
-                <div key={item.country} className="flex items-center justify-between">
-                  <span className="text-sm">{item.country}</span>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="h-2 bg-primary rounded-full" 
-                      style={{ 
-                        width: `${Math.max(20, (item.count / (countryData[0]?.count || 1)) * 100)}px` 
-                      }} 
-                    />
-                    <span className="text-sm text-muted-foreground w-8 text-right">{item.count}</span>
+      {/* Countries & Pages Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Countries */}
+        <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+          <div className="p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-muted/50">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-medium">Visitors by Country</h3>
+                <p className="text-sm text-muted-foreground">Top 10 locations</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            {countryData && countryData.length > 0 ? (
+              <div className="space-y-4">
+                {countryData.map((item, index) => (
+                  <div key={item.country} className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground w-4">{index + 1}</span>
+                    <span className="text-sm flex-1 truncate">{item.country}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-foreground/60 rounded-full transition-all duration-500" 
+                          style={{ 
+                            width: `${(item.count / (countryData[0]?.count || 1)) * 100}%` 
+                          }} 
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-8 text-right font-mono">{item.count}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">No data yet</p>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-8">No data yet</p>
+            )}
+          </div>
+        </div>
 
-      {/* Pages */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">Page Views</CardTitle>
-          <CardDescription className="text-sm">Views by page</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pageData && pageData.length > 0 ? (
-            <div className="space-y-3">
-              {pageData.map((item) => (
-                <div key={item.page} className="flex items-center justify-between">
-                  <span className="text-sm font-mono">{item.page}</span>
-                  <span className="text-sm text-muted-foreground">{item.count}</span>
-                </div>
-              ))}
+        {/* Pages */}
+        <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+          <div className="p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-muted/50">
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-medium">Page Views</h3>
+                <p className="text-sm text-muted-foreground">Views by page</p>
+              </div>
             </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">No data yet</p>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+          <div className="p-6">
+            {pageData && pageData.length > 0 ? (
+              <div className="space-y-4">
+                {pageData.map((item) => (
+                  <div key={item.page} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                    <span className="text-sm font-mono text-muted-foreground">{item.page}</span>
+                    <span className="text-sm font-medium tabular-nums">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-8">No data yet</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
