@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ['Cormorant Garamond', 'serif'],
+        serif: ['NibPro', 'Cormorant Garamond', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
