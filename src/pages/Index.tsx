@@ -27,11 +27,11 @@ const Index = () => {
         style={{ animationDelay: "0.5s" }}
       >
         <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.6] sm:leading-[1.8] tracking-tight">
-          <AnimatedText text="We are Avrumy," />
+          <AnimatedText text="We are Avrumy," delay={500} speed={60} />
           <br />
-          <AnimatedText text="a creative design studio" />
+          <AnimatedText text="a creative design studio" delay={1500} speed={60} />
           <br />
-          <AnimatedText text="located in New York City" />
+          <AnimatedText text="located in New York City" delay={3000} speed={60} />
         </p>
       </div>
 

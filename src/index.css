@@ -103,7 +103,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'NibPro', serif;
+    font-family: 'Cormorant Garamond', serif;
   }
 }
 
