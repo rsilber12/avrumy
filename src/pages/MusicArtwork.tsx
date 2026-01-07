@@ -1,7 +1,22 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const MusicArtwork = () => {
+  const { data: artworks, isLoading } = useQuery({
+    queryKey: ["music-artworks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("music_artworks")
+        .select("*")
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background px-6 py-12">
       {/* Back Navigation */}
@@ -25,25 +40,43 @@ const MusicArtwork = () => {
 
       {/* Gallery Grid */}
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {[1, 2, 3, 4].map((item, index) => (
-            <div 
-              key={item}
-              className="aspect-square bg-secondary rounded-sm overflow-hidden opacity-0 animate-fade-in-up group cursor-pointer"
-              style={{ animationDelay: `${0.3 + index * 0.15}s` }}
-            >
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors duration-300">
-                <span className="text-sm">Album {item}</span>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="animate-pulse">
+                <div className="aspect-video bg-secondary rounded-sm" />
+                <div className="h-4 bg-secondary rounded mt-4 w-3/4" />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : artworks && artworks.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {artworks.map((artwork, index) => (
+              <a
+                key={artwork.id}
+                href={artwork.youtube_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group opacity-0 animate-fade-in-up"
+                style={{ animationDelay: `${0.3 + index * 0.15}s` }}
+              >
+                <div className="aspect-video bg-secondary rounded-sm overflow-hidden">
+                  <img
+                    src={artwork.thumbnail_url}
+                    alt={artwork.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-300">
+                  {artwork.title}
+                </p>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground">No artwork added yet</p>
+        )}
       </div>
-
-      {/* Coming Soon Note */}
-      <p className="text-center text-muted-foreground mt-20 text-sm opacity-0 animate-fade-in" style={{ animationDelay: "1s" }}>
-        More artwork coming soon
-      </p>
     </div>
   );
 };

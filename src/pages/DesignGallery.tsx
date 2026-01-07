@@ -1,7 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const DesignGallery = () => {
+  const navigate = useNavigate();
+  
+  const { data: projects, isLoading } = useQuery({
+    queryKey: ["gallery-projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_projects")
+        .select("*")
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background px-6 py-12">
       {/* Back Navigation */}
@@ -13,37 +30,42 @@ const DesignGallery = () => {
         <span className="text-sm">Back</span>
       </Link>
 
-      {/* Header */}
-      <header className="max-w-4xl mx-auto text-center mb-20">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-6 opacity-0 animate-fade-in-up">
-          Design Gallery
-        </h1>
-        <p className="text-muted-foreground text-lg md:text-xl font-light opacity-0 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          A collection of our creative work
-        </p>
-      </header>
-
-      {/* Gallery Grid */}
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((item, index) => (
-            <div 
-              key={item}
-              className="aspect-square bg-secondary rounded-sm overflow-hidden opacity-0 animate-fade-in-up group cursor-pointer"
-              style={{ animationDelay: `${0.3 + index * 0.1}s` }}
-            >
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors duration-300">
-                <span className="text-sm">Project {item}</span>
+      {/* Gallery Grid - Masonry Style */}
+      <div className="max-w-7xl mx-auto">
+        {isLoading ? (
+          <div className="columns-2 lg:columns-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+              <div key={item} className="break-inside-avoid mb-4">
+                <div 
+                  className="bg-secondary rounded-sm animate-pulse"
+                  style={{ aspectRatio: Math.random() > 0.5 ? "3/4" : "4/3" }}
+                />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : projects && projects.length > 0 ? (
+          <div className="columns-2 lg:columns-4 gap-4">
+            {projects.map((project, index) => (
+              <div
+                key={project.id}
+                className="break-inside-avoid mb-4 opacity-0 animate-fade-in-up cursor-pointer group"
+                style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+                onClick={() => navigate(`/project/${project.id}`)}
+              >
+                <div className="overflow-hidden rounded-sm">
+                  <img
+                    src={project.main_image_url}
+                    alt={project.title || "Gallery project"}
+                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground">No projects added yet</p>
+        )}
       </div>
-
-      {/* Coming Soon Note */}
-      <p className="text-center text-muted-foreground mt-20 text-sm opacity-0 animate-fade-in" style={{ animationDelay: "1s" }}>
-        More projects coming soon
-      </p>
     </div>
   );
 };
