@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MusicArtworkAdmin from "@/components/admin/MusicArtworkAdmin";
 import DesignGalleryAdmin from "@/components/admin/DesignGalleryAdmin";
 import UsersAdmin from "@/components/admin/UsersAdmin";
+import AnalyticsAdmin from "@/components/admin/AnalyticsAdmin";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -57,12 +58,17 @@ const Admin = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-light tracking-normal mb-8">Admin Panel</h1>
 
-        <Tabs defaultValue="music" className="w-full">
+        <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="mb-8">
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="music">Music Artwork</TabsTrigger>
             <TabsTrigger value="gallery">Design Gallery</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AnalyticsAdmin />
+          </TabsContent>
 
           <TabsContent value="music">
             <MusicArtworkAdmin />
