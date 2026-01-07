@@ -250,12 +250,12 @@ const DesignGalleryAdmin = () => {
   };
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-6 font-sans">
       {/* Upload New */}
-      <Card>
-        <CardContent className="pt-6">
-          <Label className="mb-2 block text-sm">Add Project Images</Label>
-          <div className="flex gap-2">
+      <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+        <div className="p-6">
+          <Label className="mb-3 block text-sm font-medium">Add Project Images</Label>
+          <div className="flex gap-3">
             <input
               ref={fileInputRef}
               type="file"
@@ -267,7 +267,7 @@ const DesignGalleryAdmin = () => {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full"
+              className="w-full h-11 rounded-xl"
               variant="outline"
             >
               {isUploading ? (
@@ -278,8 +278,8 @@ const DesignGalleryAdmin = () => {
               Upload Images
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Projects Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -291,7 +291,7 @@ const DesignGalleryAdmin = () => {
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="w-6 h-6"
+                  className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
                   onClick={(e) => {
                     e.stopPropagation();
                     reorderMutation.mutate({ id: project.id, direction: "up" });
@@ -303,7 +303,7 @@ const DesignGalleryAdmin = () => {
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="w-6 h-6"
+                  className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
                   onClick={(e) => {
                     e.stopPropagation();
                     reorderMutation.mutate({ id: project.id, direction: "down" });
@@ -314,39 +314,37 @@ const DesignGalleryAdmin = () => {
                 </Button>
               </div>
               <DialogTrigger asChild>
-                <Card 
-                  className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                <div 
+                  className="cursor-pointer rounded-2xl overflow-hidden bg-card border border-border/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
                   onClick={() => {
                     setEditingProject(project);
                     setEditTitle(project.title || "");
                     setEditDescription(project.description || "");
                   }}
                 >
-                  <CardContent className="p-0">
-                    <div className="aspect-square overflow-hidden rounded-t-lg">
-                      <img
-                        src={project.main_image_url}
-                        alt={project.title || "Project"}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <p className="text-sm truncate">
-                        {project.title || "Untitled"}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={project.main_image_url}
+                      alt={project.title || "Project"}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm truncate font-medium">
+                      {project.title || "Untitled"}
+                    </p>
+                  </div>
+                </div>
               </DialogTrigger>
             </div>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-sans">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-sans rounded-2xl border-border/50">
               <DialogHeader>
                 <DialogTitle className="text-lg font-medium">Edit Project</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-6">
                 {/* Main Image Preview */}
-                <div className="aspect-video w-full overflow-hidden rounded-lg bg-secondary">
+                <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/50">
                   <img
                     src={project.main_image_url}
                     alt={project.title || "Project"}
@@ -356,23 +354,25 @@ const DesignGalleryAdmin = () => {
 
                 {/* Title & Description */}
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title" className="text-sm">Title (optional)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-sm font-medium">Title (optional)</Label>
                     <Input
                       id="title"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       placeholder="Project title"
+                      className="h-11 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="description" className="text-sm">Description (optional)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
                     <Textarea
                       id="description"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
                       placeholder="Project description"
                       rows={3}
+                      className="rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors resize-none"
                     />
                   </div>
                   <Button
@@ -381,6 +381,7 @@ const DesignGalleryAdmin = () => {
                       title: editTitle,
                       description: editDescription,
                     })}
+                    className="h-10 rounded-xl"
                   >
                     Save Changes
                   </Button>
@@ -389,7 +390,7 @@ const DesignGalleryAdmin = () => {
                 {/* Sub Images */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <Label className="text-sm">Additional Images</Label>
+                    <Label className="text-sm font-medium">Additional Images</Label>
                     <div>
                       <input
                         ref={subImagesInputRef}
@@ -402,6 +403,7 @@ const DesignGalleryAdmin = () => {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="h-8 rounded-lg"
                         onClick={() => subImagesInputRef.current?.click()}
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -409,10 +411,10 @@ const DesignGalleryAdmin = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {projectImages?.map((img) => (
-                      <div key={img.id} className="relative group">
-                        <div className="aspect-square overflow-hidden rounded-lg bg-secondary">
+                      <div key={img.id} className="relative group/img">
+                        <div className="aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/50">
                           <img
                             src={img.image_url}
                             alt=""
@@ -422,7 +424,7 @@ const DesignGalleryAdmin = () => {
                         <Button
                           size="icon"
                           variant="destructive"
-                          className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 w-7 h-7 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity"
                           onClick={() => deleteSubImageMutation.mutate(img.id)}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -433,10 +435,11 @@ const DesignGalleryAdmin = () => {
                 </div>
 
                 {/* Delete */}
-                <div className="border-t pt-4">
+                <div className="border-t border-border/50 pt-6">
                   <Button
                     variant="destructive"
                     onClick={() => deleteProjectMutation.mutate(project.id)}
+                    className="h-10 rounded-xl"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Project

@@ -188,41 +188,48 @@ const WebsitesAdmin = () => {
     <div className="space-y-6 font-sans">
       {/* Add New Website */}
       {isAdding ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Add New Website</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+          <div className="p-6 border-b border-border/50">
+            <h3 className="font-medium">Add New Website</h3>
+          </div>
+          <div className="p-6">
             <form onSubmit={handleAddWebsite} className="space-y-4">
-              <div>
-                <Label htmlFor="url" className="text-sm">Website URL</Label>
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-sm font-medium">Website URL</Label>
                 <Input
                   id="url"
                   type="text"
                   placeholder="www.example.com"
                   value={newUrl}
                   onChange={(e) => setNewUrl(e.target.value)}
-                  className="mt-1"
+                  className="h-11 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={addWebsite.isPending} size="sm">
+              <div className="flex gap-3">
+                <Button 
+                  type="submit" 
+                  disabled={addWebsite.isPending} 
+                  className="h-10 rounded-xl px-5"
+                >
                   {addWebsite.isPending ? "Adding..." : "Add Website"}
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline" 
-                  size="sm"
+                  className="h-10 rounded-xl"
                   onClick={() => setIsAdding(false)}
                 >
                   Cancel
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
-        <Button onClick={() => setIsAdding(true)} className="gap-2" size="sm">
+        <Button 
+          onClick={() => setIsAdding(true)} 
+          className="gap-2 h-10 rounded-xl"
+        >
           <Plus className="w-4 h-4" />
           Add Website
         </Button>
@@ -230,15 +237,18 @@ const WebsitesAdmin = () => {
 
       {/* Website List */}
       {isLoading ? (
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground text-center py-12">Loading...</div>
       ) : websites && websites.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {websites.map((website, index) => (
-            <Card key={website.id} className="overflow-hidden">
-              <CardContent className="p-4">
+            <div 
+              key={website.id} 
+              className="group rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+            >
+              <div className="p-5">
                 <div className="flex gap-4">
                   {/* Thumbnail */}
-                  <div className="w-48 aspect-video bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-40 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
                     <img
                       src={website.custom_thumbnail_url || website.thumbnail_url || '/placeholder.svg'}
                       alt={website.title}
@@ -247,19 +257,19 @@ const WebsitesAdmin = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 py-1">
                     <p className="font-medium text-sm truncate">{website.title}</p>
                     <a 
                       href={website.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-foreground truncate block"
+                      className="text-xs text-muted-foreground hover:text-foreground truncate block mt-1 transition-colors"
                     >
                       {website.url}
                     </a>
 
                     {/* Actions */}
-                    <div className="flex gap-2 mt-3 flex-wrap">
+                    <div className="flex gap-2 mt-3 flex-wrap opacity-0 group-hover:opacity-100 transition-opacity">
                       <input
                         type="file"
                         accept="image/*"
@@ -270,16 +280,16 @@ const WebsitesAdmin = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1 text-xs"
+                        className="gap-1.5 text-xs h-8 rounded-lg"
                         onClick={() => fileInputRefs.current[website.id]?.click()}
                       >
                         <Upload className="w-3 h-3" />
-                        Upload Thumbnail
+                        Upload
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1 text-xs"
+                        className="gap-1.5 text-xs h-8 rounded-lg"
                         disabled={isCapturing === website.id}
                         onClick={() => {
                           setIsCapturing(website.id);
@@ -287,17 +297,17 @@ const WebsitesAdmin = () => {
                         }}
                       >
                         <RefreshCw className={`w-3 h-3 ${isCapturing === website.id ? 'animate-spin' : ''}`} />
-                        Regenerate
+                        Refresh
                       </Button>
                     </div>
                   </div>
 
                   {/* Order & Delete Controls */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 rounded-lg hover:bg-muted"
                       onClick={() => moveItem(index, 'up')}
                       disabled={index === 0}
                     >
@@ -306,7 +316,7 @@ const WebsitesAdmin = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 rounded-lg hover:bg-muted"
                       onClick={() => moveItem(index, 'down')}
                       disabled={index === websites.length - 1}
                     >
@@ -315,19 +325,19 @@ const WebsitesAdmin = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => deleteWebsite.mutate(website.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-16 text-muted-foreground rounded-2xl border border-dashed border-border/50">
           No websites yet. Add your first website above.
         </div>
       )}

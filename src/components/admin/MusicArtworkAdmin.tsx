@@ -179,22 +179,23 @@ const MusicArtworkAdmin = () => {
   });
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-6 font-sans">
       {/* Add New */}
-      <Card>
-        <CardContent className="pt-6">
-          <Label htmlFor="youtube-url" className="mb-2 block text-sm">Add YouTube Link</Label>
-          <div className="flex gap-2">
+      <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+        <div className="p-6">
+          <Label htmlFor="youtube-url" className="mb-3 block text-sm font-medium">Add YouTube Link</Label>
+          <div className="flex gap-3">
             <Input
               id="youtube-url"
               placeholder="https://youtube.com/watch?v=..."
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              className="flex-1"
+              className="flex-1 h-11 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
             />
             <Button
               onClick={() => addMutation.mutate(youtubeUrl)}
               disabled={!youtubeUrl || isLoading}
+              className="h-11 rounded-xl px-5"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -203,19 +204,22 @@ const MusicArtworkAdmin = () => {
               )}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {artworks?.map((artwork, index) => (
-          <Card key={artwork.id} className="relative">
+          <div 
+            key={artwork.id} 
+            className="group relative rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+          >
             {/* Reorder buttons */}
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 size="icon"
                 variant="ghost"
-                className="w-6 h-6"
+                className="w-7 h-7 rounded-lg hover:bg-muted"
                 onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "up" })}
                 disabled={index === 0}
               >
@@ -224,33 +228,34 @@ const MusicArtworkAdmin = () => {
               <Button
                 size="icon"
                 variant="ghost"
-                className="w-6 h-6"
+                className="w-7 h-7 rounded-lg hover:bg-muted"
                 onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "down" })}
                 disabled={index === (artworks?.length || 0) - 1}
               >
                 <ChevronDown className="w-4 h-4" />
               </Button>
             </div>
-            <CardContent className="pt-6 pl-12">
+            <div className="p-5 pl-14">
               <div className="flex gap-4">
-                <div className="w-40 aspect-video bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-32 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
                   <img
                     src={artwork.thumbnail_url}
                     alt={artwork.title}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 py-1">
                   {editingId === artwork.id ? (
                     <div className="flex gap-2 items-center">
                       <Input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        className="flex-1"
+                        className="flex-1 h-9 rounded-lg"
                       />
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="w-8 h-8 rounded-lg"
                         onClick={() => updateMutation.mutate({ id: artwork.id, title: editTitle })}
                       >
                         <Check className="w-4 h-4" />
@@ -258,6 +263,7 @@ const MusicArtworkAdmin = () => {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="w-8 h-8 rounded-lg"
                         onClick={() => setEditingId(null)}
                       >
                         <X className="w-4 h-4" />
@@ -266,15 +272,15 @@ const MusicArtworkAdmin = () => {
                   ) : (
                     <p className="font-medium truncate text-sm">{artwork.title}</p>
                   )}
-                  <p className="text-xs text-muted-foreground truncate mt-1">
+                  <p className="text-xs text-muted-foreground truncate mt-1.5">
                     {artwork.youtube_url}
                   </p>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="w-8 h-8"
+                    className="w-8 h-8 rounded-lg hover:bg-muted"
                     onClick={() => {
                       setEditingId(artwork.id);
                       setEditTitle(artwork.title);
@@ -285,7 +291,7 @@ const MusicArtworkAdmin = () => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="w-8 h-8"
+                    className="w-8 h-8 rounded-lg hover:bg-muted"
                     onClick={() => refetchMutation.mutate(artwork)}
                     disabled={refetchMutation.isPending}
                   >
@@ -298,15 +304,15 @@ const MusicArtworkAdmin = () => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="w-8 h-8 text-destructive hover:text-destructive"
+                    className="w-8 h-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => deleteMutation.mutate(artwork.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     </div>
