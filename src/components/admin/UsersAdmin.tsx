@@ -60,21 +60,21 @@ const UsersAdmin = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-medium">
             <UserPlus className="w-5 h-5" />
             Add New Admin User
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Create a new user who can access the admin panel
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateUser} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-email">Email</Label>
+              <Label htmlFor="new-email" className="text-sm">Email</Label>
               <Input
                 id="new-email"
                 type="email"
@@ -85,7 +85,7 @@ const UsersAdmin = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="new-password">Password</Label>
+              <Label htmlFor="new-password" className="text-sm">Password</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -109,7 +109,7 @@ const UsersAdmin = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Session</CardTitle>
+          <CardTitle className="text-base font-medium">Session</CardTitle>
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={handleSignOut}>

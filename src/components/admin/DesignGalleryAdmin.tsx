@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Loader2, Plus, Pencil, Upload, Image } from "lucide-react";
+import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GalleryProject {
@@ -87,7 +87,6 @@ const DesignGalleryAdmin = () => {
       setIsUploading(true);
       const imageUrl = await uploadImage(file);
 
-      // Get image dimensions for aspect ratio
       const img = new window.Image();
       img.src = URL.createObjectURL(file);
       await new Promise((resolve) => { img.onload = resolve; });
@@ -150,6 +149,37 @@ const DesignGalleryAdmin = () => {
       queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
       setEditingProject(null);
       toast({ title: "Project deleted" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: "up" | "down" }) => {
+      if (!projects) return;
+      
+      const currentIndex = projects.findIndex((p) => p.id === id);
+      if (currentIndex === -1) return;
+      
+      const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (swapIndex < 0 || swapIndex >= projects.length) return;
+
+      const currentItem = projects[currentIndex];
+      const swapItem = projects[swapIndex];
+
+      await supabase
+        .from("gallery_projects")
+        .update({ display_order: swapItem.display_order })
+        .eq("id", currentItem.id);
+
+      await supabase
+        .from("gallery_projects")
+        .update({ display_order: currentItem.display_order })
+        .eq("id", swapItem.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -220,11 +250,11 @@ const DesignGalleryAdmin = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Upload New */}
       <Card>
         <CardContent className="pt-6">
-          <Label className="mb-2 block">Add Project Images</Label>
+          <Label className="mb-2 block text-sm">Add Project Images</Label>
           <div className="flex gap-2">
             <input
               ref={fileInputRef}
@@ -253,36 +283,65 @@ const DesignGalleryAdmin = () => {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {projects?.map((project) => (
+        {projects?.map((project, index) => (
           <Dialog key={project.id}>
-            <DialogTrigger asChild>
-              <Card 
-                className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                onClick={() => {
-                  setEditingProject(project);
-                  setEditTitle(project.title || "");
-                  setEditDescription(project.description || "");
-                }}
-              >
-                <CardContent className="p-0">
-                  <div className="aspect-square overflow-hidden rounded-t-lg">
-                    <img
-                      src={project.main_image_url}
-                      alt={project.title || "Project"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm truncate">
-                      {project.title || "Untitled"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="relative group">
+              {/* Reorder buttons */}
+              <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="w-6 h-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reorderMutation.mutate({ id: project.id, direction: "up" });
+                  }}
+                  disabled={index === 0}
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="w-6 h-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reorderMutation.mutate({ id: project.id, direction: "down" });
+                  }}
+                  disabled={index === (projects?.length || 0) - 1}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </div>
+              <DialogTrigger asChild>
+                <Card 
+                  className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                  onClick={() => {
+                    setEditingProject(project);
+                    setEditTitle(project.title || "");
+                    setEditDescription(project.description || "");
+                  }}
+                >
+                  <CardContent className="p-0">
+                    <div className="aspect-square overflow-hidden rounded-t-lg">
+                      <img
+                        src={project.main_image_url}
+                        alt={project.title || "Project"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm truncate">
+                        {project.title || "Untitled"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+            </div>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-sans">
               <DialogHeader>
-                <DialogTitle>Edit Project</DialogTitle>
+                <DialogTitle className="text-lg font-medium">Edit Project</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-6">
@@ -298,7 +357,7 @@ const DesignGalleryAdmin = () => {
                 {/* Title & Description */}
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="title">Title (optional)</Label>
+                    <Label htmlFor="title" className="text-sm">Title (optional)</Label>
                     <Input
                       id="title"
                       value={editTitle}
@@ -307,7 +366,7 @@ const DesignGalleryAdmin = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="description">Description (optional)</Label>
+                    <Label htmlFor="description" className="text-sm">Description (optional)</Label>
                     <Textarea
                       id="description"
                       value={editDescription}
@@ -330,7 +389,7 @@ const DesignGalleryAdmin = () => {
                 {/* Sub Images */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <Label>Additional Images</Label>
+                    <Label className="text-sm">Additional Images</Label>
                     <div>
                       <input
                         ref={subImagesInputRef}
@@ -353,7 +412,7 @@ const DesignGalleryAdmin = () => {
                   <div className="grid grid-cols-3 gap-2">
                     {projectImages?.map((img) => (
                       <div key={img.id} className="relative group">
-                        <div className="aspect-square overflow-hidden rounded bg-secondary">
+                        <div className="aspect-square overflow-hidden rounded-lg bg-secondary">
                           <img
                             src={img.image_url}
                             alt=""

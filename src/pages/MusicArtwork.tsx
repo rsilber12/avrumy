@@ -31,6 +31,13 @@ const MusicArtwork = () => {
         <span className="text-sm">Back</span>
       </Link>
 
+      {/* Header */}
+      <header className="max-w-4xl mx-auto text-center mb-20">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal opacity-0 animate-fade-in-up">
+          Music Artwork
+        </h1>
+      </header>
+
       {/* Gallery Grid */}
       <div className="max-w-6xl mx-auto">
         {isLoading ? (

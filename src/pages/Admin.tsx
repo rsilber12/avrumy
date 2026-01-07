@@ -34,7 +34,7 @@ const Admin = () => {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center font-sans">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
@@ -45,7 +45,7 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12">
+    <div className="min-h-screen bg-background px-6 py-12 font-sans">
       {/* Back Navigation */}
       <Link 
         to="/" 
@@ -56,14 +56,14 @@ const Admin = () => {
       </Link>
 
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-light tracking-normal mb-8">Admin Panel</h1>
+        <h1 className="text-2xl font-medium tracking-normal mb-8">Admin Panel</h1>
 
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="mb-8">
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="music">Music Artwork</TabsTrigger>
-            <TabsTrigger value="gallery">Design Gallery</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
+            <TabsTrigger value="music" className="text-sm">Music Artwork</TabsTrigger>
+            <TabsTrigger value="gallery" className="text-sm">Design Gallery</TabsTrigger>
+            <TabsTrigger value="users" className="text-sm">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">
