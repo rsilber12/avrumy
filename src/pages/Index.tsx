@@ -29,7 +29,7 @@ const Index = () => {
         className="text-center mb-10 sm:mb-20 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
-        <div className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light tracking-tight flex flex-col gap-4 sm:gap-8 md:gap-10 lg:gap-12">
+        <div className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light tracking-tight flex flex-col gap-2 sm:gap-4 md:gap-6 lg:gap-8">
           <span><AnimatedText text="We are Avrumy," delay={600} speed={90} /></span>
           <span><AnimatedText text="a creative design studio" delay={2200} speed={85} /></span>
           <span><AnimatedText text="located in New York City" delay={4500} speed={85} /></span>
