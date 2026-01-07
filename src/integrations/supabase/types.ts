@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gallery_project_images: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          image_url: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_project_images_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gallery_projects: {
+        Row: {
+          aspect_ratio: number | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          main_image_url: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          aspect_ratio?: number | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          main_image_url: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aspect_ratio?: number | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          main_image_url?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      music_artworks: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          thumbnail_url: string
+          title: string
+          updated_at: string
+          youtube_url: string
+          youtube_video_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          thumbnail_url: string
+          title: string
+          updated_at?: string
+          youtube_url: string
+          youtube_video_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          thumbnail_url?: string
+          title?: string
+          updated_at?: string
+          youtube_url?: string
+          youtube_video_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

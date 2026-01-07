@@ -1,1 +1,4 @@
 project_id = "fuwtowsfoxarzklbydnq"
+
+[functions.fetch-youtube-info]
+verify_jwt = false
