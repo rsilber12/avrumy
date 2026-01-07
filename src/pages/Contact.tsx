@@ -55,7 +55,7 @@ const Contact = () => {
 
       {/* Footer */}
       <footer className="text-center text-muted-foreground text-sm mt-auto pt-12 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
-        © {new Date().getFullYear()} Avrumy
+        © {new Date().getFullYear()} Avrumy, LLC
       </footer>
     </div>
   );

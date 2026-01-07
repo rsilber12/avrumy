@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MusicArtworkAdmin from "@/components/admin/MusicArtworkAdmin";
 import DesignGalleryAdmin from "@/components/admin/DesignGalleryAdmin";
+import WebsitesAdmin from "@/components/admin/WebsitesAdmin";
 import UsersAdmin from "@/components/admin/UsersAdmin";
 import AnalyticsAdmin from "@/components/admin/AnalyticsAdmin";
 
@@ -61,8 +62,9 @@ const Admin = () => {
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="mb-8">
             <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
-            <TabsTrigger value="music" className="text-sm">Music Artwork</TabsTrigger>
             <TabsTrigger value="gallery" className="text-sm">Design Gallery</TabsTrigger>
+            <TabsTrigger value="websites" className="text-sm">Websites</TabsTrigger>
+            <TabsTrigger value="music" className="text-sm">Music Artwork</TabsTrigger>
             <TabsTrigger value="users" className="text-sm">Users</TabsTrigger>
           </TabsList>
 
@@ -70,12 +72,16 @@ const Admin = () => {
             <AnalyticsAdmin />
           </TabsContent>
 
-          <TabsContent value="music">
-            <MusicArtworkAdmin />
-          </TabsContent>
-
           <TabsContent value="gallery">
             <DesignGalleryAdmin />
+          </TabsContent>
+
+          <TabsContent value="websites">
+            <WebsitesAdmin />
+          </TabsContent>
+
+          <TabsContent value="music">
+            <MusicArtworkAdmin />
           </TabsContent>
 
           <TabsContent value="users">
