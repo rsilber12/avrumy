@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Loader2, Plus, Pencil, X, Check } from "lucide-react";
+import { Trash2, Loader2, Plus, Pencil, X, Check, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface MusicArtwork {
@@ -42,7 +42,6 @@ const MusicArtworkAdmin = () => {
     mutationFn: async (url: string) => {
       setIsLoading(true);
       
-      // Fetch YouTube info via edge function
       const { data: youtubeData, error: functionError } = await supabase.functions.invoke(
         "fetch-youtube-info",
         { body: { url } }
@@ -147,12 +146,44 @@ const MusicArtworkAdmin = () => {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: "up" | "down" }) => {
+      if (!artworks) return;
+      
+      const currentIndex = artworks.findIndex((a) => a.id === id);
+      if (currentIndex === -1) return;
+      
+      const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (swapIndex < 0 || swapIndex >= artworks.length) return;
+
+      const currentItem = artworks[currentIndex];
+      const swapItem = artworks[swapIndex];
+
+      // Swap display_order values
+      await supabase
+        .from("music_artworks")
+        .update({ display_order: swapItem.display_order })
+        .eq("id", currentItem.id);
+
+      await supabase
+        .from("music_artworks")
+        .update({ display_order: currentItem.display_order })
+        .eq("id", swapItem.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["music-artworks"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Add New */}
       <Card>
         <CardContent className="pt-6">
-          <Label htmlFor="youtube-url" className="mb-2 block">Add YouTube Link</Label>
+          <Label htmlFor="youtube-url" className="mb-2 block text-sm">Add YouTube Link</Label>
           <div className="flex gap-2">
             <Input
               id="youtube-url"
@@ -177,11 +208,32 @@ const MusicArtworkAdmin = () => {
 
       {/* List */}
       <div className="space-y-4">
-        {artworks?.map((artwork) => (
-          <Card key={artwork.id}>
-            <CardContent className="pt-6">
+        {artworks?.map((artwork, index) => (
+          <Card key={artwork.id} className="relative">
+            {/* Reorder buttons */}
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-6 h-6"
+                onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "up" })}
+                disabled={index === 0}
+              >
+                <ChevronUp className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-6 h-6"
+                onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "down" })}
+                disabled={index === (artworks?.length || 0) - 1}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </div>
+            <CardContent className="pt-6 pl-12">
               <div className="flex gap-4">
-                <div className="w-40 aspect-video bg-secondary rounded overflow-hidden flex-shrink-0">
+                <div className="w-40 aspect-video bg-secondary rounded-lg overflow-hidden flex-shrink-0">
                   <img
                     src={artwork.thumbnail_url}
                     alt={artwork.title}
@@ -212,16 +264,17 @@ const MusicArtworkAdmin = () => {
                       </Button>
                     </div>
                   ) : (
-                    <p className="font-medium truncate">{artwork.title}</p>
+                    <p className="font-medium truncate text-sm">{artwork.title}</p>
                   )}
-                  <p className="text-sm text-muted-foreground truncate mt-1">
+                  <p className="text-xs text-muted-foreground truncate mt-1">
                     {artwork.youtube_url}
                   </p>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-1 flex-shrink-0">
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="w-8 h-8"
                     onClick={() => {
                       setEditingId(artwork.id);
                       setEditTitle(artwork.title);
@@ -232,6 +285,7 @@ const MusicArtworkAdmin = () => {
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="w-8 h-8"
                     onClick={() => refetchMutation.mutate(artwork)}
                     disabled={refetchMutation.isPending}
                   >
@@ -244,8 +298,8 @@ const MusicArtworkAdmin = () => {
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="w-8 h-8 text-destructive hover:text-destructive"
                     onClick={() => deleteMutation.mutate(artwork.id)}
-                    className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

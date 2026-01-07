@@ -32,6 +32,13 @@ const DesignGallery = () => {
         <span className="text-sm">Back</span>
       </Link>
 
+      {/* Header */}
+      <header className="max-w-4xl mx-auto text-center mb-20">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-normal opacity-0 animate-fade-in-up">
+          Design Gallery
+        </h1>
+      </header>
+
       {/* Gallery Grid - Masonry Style */}
       <div className="max-w-7xl mx-auto">
         {isLoading ? (

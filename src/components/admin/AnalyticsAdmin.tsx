@@ -42,7 +42,6 @@ const AnalyticsAdmin = () => {
       
       if (error) throw error;
       
-      // Count by country
       const counts: Record<string, number> = {};
       data?.forEach((visit) => {
         if (visit.country) {
@@ -66,7 +65,6 @@ const AnalyticsAdmin = () => {
       
       if (error) throw error;
       
-      // Count by page
       const counts: Record<string, number> = {};
       data?.forEach((visit) => {
         counts[visit.page_path] = (counts[visit.page_path] || 0) + 1;
@@ -91,7 +89,7 @@ const AnalyticsAdmin = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -100,7 +98,7 @@ const AnalyticsAdmin = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalVisits ?? 0}</div>
+            <div className="text-2xl font-semibold">{totalVisits ?? 0}</div>
           </CardContent>
         </Card>
 
@@ -110,7 +108,7 @@ const AnalyticsAdmin = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{todayVisits ?? 0}</div>
+            <div className="text-2xl font-semibold">{todayVisits ?? 0}</div>
           </CardContent>
         </Card>
 
@@ -120,7 +118,7 @@ const AnalyticsAdmin = () => {
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{countryData?.length ?? 0}</div>
+            <div className="text-2xl font-semibold">{countryData?.length ?? 0}</div>
           </CardContent>
         </Card>
 
@@ -130,7 +128,7 @@ const AnalyticsAdmin = () => {
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{emailClicks ?? 0}</div>
+            <div className="text-2xl font-semibold">{emailClicks ?? 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -138,8 +136,8 @@ const AnalyticsAdmin = () => {
       {/* Countries */}
       <Card>
         <CardHeader>
-          <CardTitle>Visitors by Country</CardTitle>
-          <CardDescription>Top 10 countries</CardDescription>
+          <CardTitle className="text-base font-medium">Visitors by Country</CardTitle>
+          <CardDescription className="text-sm">Top 10 countries</CardDescription>
         </CardHeader>
         <CardContent>
           {countryData && countryData.length > 0 ? (
@@ -168,8 +166,8 @@ const AnalyticsAdmin = () => {
       {/* Pages */}
       <Card>
         <CardHeader>
-          <CardTitle>Page Views</CardTitle>
-          <CardDescription>Views by page</CardDescription>
+          <CardTitle className="text-base font-medium">Page Views</CardTitle>
+          <CardDescription className="text-sm">Views by page</CardDescription>
         </CardHeader>
         <CardContent>
           {pageData && pageData.length > 0 ? (
