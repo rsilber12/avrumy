@@ -15,27 +15,23 @@ const AnimatedText = ({
   speed = 55,
   storageKey
 }: AnimatedTextProps) => {
-  const [displayedText, setDisplayedText] = useState(() => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [showCursor, setShowCursor] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  useEffect(() => {
     // Check if animation was already played in this session
     if (storageKey) {
       const alreadyPlayed = sessionStorage.getItem(`typewriter-${storageKey}`);
       if (alreadyPlayed) {
-        return text;
+        setDisplayedText(text);
+        return;
       }
     }
-    return "";
-  });
-  const [showCursor, setShowCursor] = useState(false);
-  const [isComplete, setIsComplete] = useState(() => {
-    if (storageKey) {
-      return !!sessionStorage.getItem(`typewriter-${storageKey}`);
-    }
-    return false;
-  });
 
-  useEffect(() => {
-    // Skip if already complete
-    if (isComplete) return;
+    // Prevent running twice
+    if (hasStarted) return;
+    setHasStarted(true);
 
     let currentIndex = 0;
     let typeInterval: ReturnType<typeof setInterval>;
@@ -52,7 +48,6 @@ const AnimatedText = ({
           clearInterval(typeInterval);
           cursorTimeout = setTimeout(() => {
             setShowCursor(false);
-            setIsComplete(true);
             if (storageKey) {
               sessionStorage.setItem(`typewriter-${storageKey}`, "true");
             }
@@ -64,9 +59,9 @@ const AnimatedText = ({
     return () => {
       clearTimeout(startDelay);
       clearTimeout(cursorTimeout);
-      clearInterval(typeInterval);
+      if (typeInterval) clearInterval(typeInterval);
     };
-  }, [text, delay, speed, storageKey, isComplete]);
+  }, [text, delay, speed, storageKey, hasStarted]);
 
   return (
     <span className={className}>
