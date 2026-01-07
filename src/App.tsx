@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,17 +8,13 @@ import DesignGallery from "./pages/DesignGallery";
 import MusicArtwork from "./pages/MusicArtwork";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import LoadingScreen from "./components/LoadingScreen";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
         <Toaster />
         <Sonner />
         <BrowserRouter>
