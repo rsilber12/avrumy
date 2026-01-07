@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { usePageVisit, trackEmailClick } from "@/hooks/useAnalytics";
 
 const Contact = () => {
+  usePageVisit("/contact");
+
+  const handleEmailClick = () => {
+    trackEmailClick();
+  };
+
   return (
     <div className="min-h-screen bg-background px-6 py-12 flex flex-col">
       {/* Back Navigation */}
@@ -28,6 +35,7 @@ const Contact = () => {
 
           <a 
             href="mailto:mail@avrumy.com" 
+            onClick={handleEmailClick}
             className="inline-block text-foreground text-xl md:text-2xl font-light tracking-wide hover:text-muted-foreground transition-colors duration-300"
           >
             mail@avrumy.com

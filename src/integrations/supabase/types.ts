@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_clicks: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       gallery_project_images: {
         Row: {
           created_at: string
@@ -109,6 +124,36 @@ export type Database = {
           updated_at?: string
           youtube_url?: string
           youtube_video_id?: string
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          page_path: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          page_path: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          page_path?: string
+          referrer?: string | null
+          user_agent?: string | null
         }
         Relationships: []
       }

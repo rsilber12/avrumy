@@ -2,9 +2,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageVisit } from "@/hooks/useAnalytics";
 
 const DesignGallery = () => {
   const navigate = useNavigate();
+  usePageVisit("/design-gallery");
   
   const { data: projects, isLoading } = useQuery({
     queryKey: ["gallery-projects"],

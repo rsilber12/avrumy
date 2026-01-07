@@ -2,8 +2,11 @@ import { Link } from "react-router-dom";
 
 import avrumyAnimation from "@/assets/avrumy-logo-animation.mp4";
 import AnimatedText from "@/components/AnimatedText";
+import { usePageVisit } from "@/hooks/useAnalytics";
 
 const Index = () => {
+  usePageVisit("/");
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-0">
       {/* Logo Animation */}
@@ -26,7 +29,7 @@ const Index = () => {
         className="text-center mb-10 sm:mb-20 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
-        <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.6] sm:leading-[1.8] tracking-tight">
+        <p className="text-foreground text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[2] sm:leading-[2.2] tracking-tight">
           <AnimatedText text="We are Avrumy," delay={500} speed={90} />
           <br />
           <AnimatedText text="a creative design studio" delay={2000} speed={90} />
