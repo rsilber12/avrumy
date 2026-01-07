@@ -44,7 +44,7 @@ const MusicArtwork = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[1, 2, 3, 4].map((item) => (
               <div key={item} className="animate-pulse">
-                <div className="aspect-video bg-secondary rounded-lg" />
+                <div className="aspect-video bg-secondary rounded-xl" />
                 <div className="h-4 bg-secondary rounded mt-4 w-3/4" />
               </div>
             ))}
@@ -60,7 +60,7 @@ const MusicArtwork = () => {
                 className="group opacity-0 animate-fade-in-up"
                 style={{ animationDelay: `${0.1 + index * 0.15}s` }}
               >
-                <div className="aspect-video bg-secondary rounded-lg overflow-hidden">
+                <div className="aspect-video bg-secondary rounded-xl overflow-hidden">
                   <img
                     src={artwork.thumbnail_url}
                     alt={artwork.title}

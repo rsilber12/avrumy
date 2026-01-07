@@ -55,7 +55,7 @@ const Websites = () => {
                 className="group opacity-0 animate-fade-in-up block"
                 style={{ animationDelay: `${index * 0.1}s`, animationFillMode: "forwards" }}
               >
-                <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
+                <div className="aspect-video bg-muted rounded-xl overflow-hidden mb-4">
                   <img
                     src={website.custom_thumbnail_url || website.thumbnail_url || '/placeholder.svg'}
                     alt={website.title}
