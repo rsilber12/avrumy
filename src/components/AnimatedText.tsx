@@ -5,34 +5,18 @@ interface AnimatedTextProps {
   className?: string;
   delay?: number;
   speed?: number;
-  storageKey?: string;
 }
 
 const AnimatedText = ({ 
   text, 
   className = "", 
   delay = 0,
-  speed = 55,
-  storageKey
+  speed = 55
 }: AnimatedTextProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [showCursor, setShowCursor] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    // Check if animation was already played in this session
-    if (storageKey) {
-      const alreadyPlayed = sessionStorage.getItem(`typewriter-${storageKey}`);
-      if (alreadyPlayed) {
-        setDisplayedText(text);
-        return;
-      }
-    }
-
-    // Prevent running twice
-    if (hasStarted) return;
-    setHasStarted(true);
-
     let currentIndex = 0;
     let typeInterval: ReturnType<typeof setInterval>;
     let cursorTimeout: ReturnType<typeof setTimeout>;
@@ -48,9 +32,6 @@ const AnimatedText = ({
           clearInterval(typeInterval);
           cursorTimeout = setTimeout(() => {
             setShowCursor(false);
-            if (storageKey) {
-              sessionStorage.setItem(`typewriter-${storageKey}`, "true");
-            }
           }, 400);
         }
       }, speed);
@@ -61,7 +42,7 @@ const AnimatedText = ({
       clearTimeout(cursorTimeout);
       if (typeInterval) clearInterval(typeInterval);
     };
-  }, [text, delay, speed, storageKey, hasStarted]);
+  }, [text, delay, speed]);
 
   return (
     <span className={className}>
