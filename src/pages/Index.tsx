@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MoveRight } from "lucide-react";
+
 import avrumyAnimation from "@/assets/avrumy-logo-animation.mp4";
 import AnimatedText from "@/components/AnimatedText";
 
@@ -42,20 +42,17 @@ const Index = () => {
       >
         <ul className="flex flex-col md:flex-row items-center gap-4 sm:gap-6 md:gap-12 text-base sm:text-lg tracking-tight font-sans">
           <li>
-            <Link to="/design-gallery" className="nav-link inline-flex items-center group">
-              <MoveRight className="nav-arrow w-4 h-4" />
+            <Link to="/design-gallery" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Design Gallery</span>
             </Link>
           </li>
           <li>
-            <Link to="/music-artwork" className="nav-link inline-flex items-center group">
-              <MoveRight className="nav-arrow w-4 h-4" />
+            <Link to="/music-artwork" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Music Artwork</span>
             </Link>
           </li>
           <li>
-            <Link to="/contact" className="nav-link inline-flex items-center group">
-              <MoveRight className="nav-arrow w-4 h-4" />
+            <Link to="/contact" className="nav-link group">
               <span className="group-hover:text-cursor-blue transition-colors duration-300">Contact</span>
             </Link>
           </li>
