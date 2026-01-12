@@ -27,11 +27,14 @@ interface ProjectImage {
 
 const DesignGalleryAdmin = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
   const [editingProject, setEditingProject] = useState<GalleryProject | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,7 +87,6 @@ const DesignGalleryAdmin = () => {
 
   const addProjectMutation = useMutation({
     mutationFn: async (file: File) => {
-      setIsUploading(true);
       const imageUrl = await uploadImage(file);
 
       const img = new window.Image();
@@ -107,13 +109,26 @@ const DesignGalleryAdmin = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
-      toast({ title: "Project added" });
+      setUploadCount((prev) => {
+        const newCount = prev - 1;
+        if (newCount === 0) {
+          setIsUploading(false);
+          toast({ title: "All images uploaded" });
+        }
+        return newCount;
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      setUploadCount((prev) => {
+        const newCount = prev - 1;
+        if (newCount === 0) {
+          setIsUploading(false);
+        }
+        return newCount;
+      });
     },
     onSettled: () => {
-      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
   });
@@ -230,12 +245,22 @@ const DesignGalleryAdmin = () => {
     },
   });
 
+  const handleFiles = (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (fileArray.length === 0) return;
+    
+    setIsUploading(true);
+    setUploadCount(fileArray.length);
+    
+    fileArray.forEach((file) => {
+      addProjectMutation.mutate(file);
+    });
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file) => {
-        addProjectMutation.mutate(file);
-      });
+      handleFiles(files);
     }
   };
 
@@ -249,35 +274,81 @@ const DesignGalleryAdmin = () => {
     if (subImagesInputRef.current) subImagesInputRef.current.value = "";
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  };
+
   return (
     <div className="space-y-6 font-sans">
-      {/* Upload New */}
-      <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
-        <div className="p-6">
-          <Label className="mb-3 block text-sm font-medium">Add Project Images</Label>
-          <div className="flex gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <Button
+      {/* Drag & Drop Upload Zone */}
+      <div
+        ref={dropZoneRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`rounded-2xl border-2 border-dashed transition-all duration-300 ${
+          isDragging 
+            ? "border-primary bg-primary/5 scale-[1.01]" 
+            : "border-border/50 bg-card hover:border-primary/50"
+        }`}
+      >
+        <div className="p-8 text-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          {isUploading ? (
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">
+                Uploading {uploadCount} image{uploadCount !== 1 ? "s" : ""}...
+              </p>
+            </div>
+          ) : (
+            <div 
+              className="flex flex-col items-center gap-3 cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="w-full h-11 rounded-xl"
-              variant="outline"
             >
-              {isUploading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Upload className="w-4 h-4 mr-2" />
-              )}
-              Upload Images
-            </Button>
-          </div>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
+                isDragging ? "bg-primary/10" : "bg-muted"
+              }`}>
+                <Upload className={`w-6 h-6 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {isDragging ? "Drop images here" : "Drag & drop images here"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  or click to browse • Each image becomes a project
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
