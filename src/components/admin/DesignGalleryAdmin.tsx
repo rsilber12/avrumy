@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { compressImage } from "@/lib/imageCompression";
 
 interface GalleryProject {
   id: string;
@@ -69,16 +68,13 @@ const DesignGalleryAdmin = () => {
   });
 
   const uploadImage = async (file: File): Promise<string> => {
-    // Compress image before upload
-    const compressedFile = await compressImage(file);
-    
-    const fileExt = compressedFile.name.split('.').pop();
+    const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `projects/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("gallery")
-      .upload(filePath, compressedFile);
+      .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
