@@ -5,20 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePageVisit } from "@/hooks/useAnalytics";
 import GlowingCard from "@/components/GlowingCard";
 
-// Transform Supabase storage URL to serve optimized image
-const getOptimizedImageUrl = (url: string, width: number = 400) => {
-  // Check if it's a Supabase storage URL
-  if (url.includes('/storage/v1/object/public/')) {
-    // Replace with render endpoint for transformations
-    const transformedUrl = url.replace(
-      '/storage/v1/object/public/',
-      '/storage/v1/render/image/public/'
-    );
-    return `${transformedUrl}?width=${width}&quality=75`;
-  }
-  return url;
-};
-
 const DesignGallery = () => {
   const navigate = useNavigate();
   usePageVisit("/design-gallery");
@@ -71,11 +57,9 @@ const DesignGallery = () => {
                     onClick={() => navigate(`/project/${project.id}`)}
                   >
                     <img
-                      src={getOptimizedImageUrl(project.main_image_url, 400)}
+                      src={project.main_image_url}
                       alt={project.title || "Gallery project"}
                       className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                      decoding="async"
                     />
                   </div>
                 </GlowingCard>
