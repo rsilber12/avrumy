@@ -45,7 +45,7 @@ const DesignGallery = () => {
       {/* Gallery Grid */}
       <div className="max-w-7xl mx-auto">
         {projects && projects.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-auto items-start">
             {projects.map((project) => (
               <div key={project.id}>
                 <GlowingCard className="rounded-xl cursor-pointer">
@@ -56,6 +56,7 @@ const DesignGallery = () => {
                     <img
                       src={project.main_image_url}
                       alt={project.title || "Gallery project"}
+                      loading="eager"
                       className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
                     />
                   </div>
