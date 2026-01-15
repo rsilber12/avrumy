@@ -36,6 +36,7 @@ const DesignGalleryAdmin = () => {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [fileSizes, setFileSizes] = useState<Record<string, number>>({});
+  const [compressionProgress, setCompressionProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -281,19 +282,59 @@ const DesignGalleryAdmin = () => {
 
   const compressMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("compress-gallery-images");
-      if (error) throw error;
-      return data as { processed: number; compressed: number; skipped: number; failed: number };
+      // First, get list of images that need compression
+      const { data: listData, error: listError } = await supabase.functions.invoke("compress-gallery-images", {
+        body: { mode: "list" },
+      });
+      if (listError) throw listError;
+
+      const images = listData.images as { id: string; type: "main" | "sub"; url: string }[];
+      
+      if (images.length === 0) {
+        return { compressed: 0, total: 0 };
+      }
+
+      setCompressionProgress({ current: 0, total: images.length });
+      let compressed = 0;
+
+      // Process each image one at a time
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        setCompressionProgress({ current: i + 1, total: images.length });
+
+        try {
+          const { data, error } = await supabase.functions.invoke("compress-gallery-images", {
+            body: {
+              mode: "compress",
+              projectId: img.id,
+              imageId: img.type === "sub" ? img.id : undefined,
+              imageType: img.type,
+            },
+          });
+
+          if (!error && data?.compressed) {
+            compressed++;
+          }
+        } catch {
+          // Continue with next image
+        }
+      }
+
+      return { compressed, total: images.length };
     },
     onSuccess: (data) => {
+      setCompressionProgress(null);
       queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
       queryClient.invalidateQueries({ queryKey: ["gallery-project-images"] });
       toast({
         title: "Compression complete",
-        description: `${data.compressed} images compressed, ${data.skipped} already under 512KB, ${data.failed} failed`,
+        description: data.total === 0 
+          ? "All images are already under 512KB" 
+          : `${data.compressed} of ${data.total} images compressed`,
       });
     },
     onError: (error: Error) => {
+      setCompressionProgress(null);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -522,20 +563,33 @@ const DesignGalleryAdmin = () => {
           Shuffle
         </Button>
         
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 rounded-xl gap-2"
-          onClick={() => compressMutation.mutate()}
-          disabled={compressMutation.isPending || !projects || projects.length === 0}
-        >
-          {compressMutation.isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
+        {compressionProgress ? (
+          <div className="flex items-center gap-3 h-9 px-4 rounded-xl bg-muted border border-border/50">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="w-32 h-2 bg-background rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
+                  style={{ width: `${(compressionProgress.current / compressionProgress.total) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {compressionProgress.current}/{compressionProgress.total} ({Math.round((compressionProgress.current / compressionProgress.total) * 100)}%)
+              </span>
+            </div>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 rounded-xl gap-2"
+            onClick={() => compressMutation.mutate()}
+            disabled={compressMutation.isPending || !projects || projects.length === 0}
+          >
             <Minimize2 className="w-4 h-4" />
-          )}
-          {compressMutation.isPending ? "Compressing..." : "Compress All"}
-        </Button>
+            Compress All
+          </Button>
+        )}
       </div>
 
       {/* Projects Grid */}

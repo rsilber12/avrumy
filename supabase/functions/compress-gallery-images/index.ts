@@ -41,7 +41,6 @@ async function compressImage(
     const dataUrl = `data:${contentType};base64,${base64Image}`;
 
     // Calculate target dimensions to achieve ~512KB
-    // Assuming roughly linear relationship between pixel count and file size
     const reductionRatio = Math.sqrt(MAX_SIZE_BYTES / originalSize);
     
     // Use Lovable AI to compress/resize the image
@@ -149,91 +148,116 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch all gallery projects
-    const { data: projects, error: projectsError } = await supabase
-      .from("gallery_projects")
-      .select("id, main_image_url");
+    const body = await req.json().catch(() => ({}));
+    const { mode, projectId, imageId, imageType } = body;
 
-    if (projectsError) {
-      throw new Error(`Failed to fetch projects: ${projectsError.message}`);
+    // Mode: "list" - return list of images that need compression
+    if (mode === "list") {
+      const { data: projects } = await supabase
+        .from("gallery_projects")
+        .select("id, main_image_url");
+
+      const { data: projectImages } = await supabase
+        .from("gallery_project_images")
+        .select("id, image_url");
+
+      const imagesToCompress: { id: string; type: "main" | "sub"; url: string }[] = [];
+
+      // Check main images
+      for (const project of projects || []) {
+        try {
+          const response = await fetch(project.main_image_url, { method: "HEAD" });
+          const contentLength = response.headers.get("content-length");
+          if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
+            imagesToCompress.push({ id: project.id, type: "main", url: project.main_image_url });
+          }
+        } catch {
+          // Skip if can't check
+        }
+      }
+
+      // Check sub images
+      for (const image of projectImages || []) {
+        try {
+          const response = await fetch(image.image_url, { method: "HEAD" });
+          const contentLength = response.headers.get("content-length");
+          if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
+            imagesToCompress.push({ id: image.id, type: "sub", url: image.image_url });
+          }
+        } catch {
+          // Skip if can't check
+        }
+      }
+
+      return new Response(JSON.stringify({ images: imagesToCompress }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Fetch all project images
-    const { data: projectImages, error: imagesError } = await supabase
-      .from("gallery_project_images")
-      .select("id, image_url");
+    // Mode: "compress" - compress a single image
+    if (mode === "compress" && projectId && imageType) {
+      let imageUrl: string | null = null;
 
-    if (imagesError) {
-      throw new Error(`Failed to fetch project images: ${imagesError.message}`);
-    }
-
-    const results = {
-      processed: 0,
-      compressed: 0,
-      skipped: 0,
-      failed: 0,
-      details: [] as { id: string; type: string; originalSize: number; newSize: number }[],
-    };
-
-    // Process main project images
-    for (const project of projects || []) {
-      results.processed++;
-      const result = await compressImage(project.main_image_url, supabaseUrl, supabaseServiceKey);
-      
-      if (result) {
-        // Update project with new URL
-        const { error: updateError } = await supabase
+      if (imageType === "main") {
+        const { data } = await supabase
           .from("gallery_projects")
-          .update({ main_image_url: result.newUrl })
-          .eq("id", project.id);
-
-        if (updateError) {
-          console.error(`Failed to update project ${project.id}: ${updateError.message}`);
-          results.failed++;
-        } else {
-          results.compressed++;
-          results.details.push({
-            id: project.id,
-            type: "main",
-            originalSize: result.originalSize,
-            newSize: result.newSize,
-          });
-        }
-      } else {
-        results.skipped++;
-      }
-    }
-
-    // Process additional project images
-    for (const image of projectImages || []) {
-      results.processed++;
-      const result = await compressImage(image.image_url, supabaseUrl, supabaseServiceKey);
-      
-      if (result) {
-        // Update image with new URL
-        const { error: updateError } = await supabase
+          .select("main_image_url")
+          .eq("id", projectId)
+          .single();
+        imageUrl = data?.main_image_url || null;
+      } else if (imageType === "sub" && imageId) {
+        const { data } = await supabase
           .from("gallery_project_images")
-          .update({ image_url: result.newUrl })
-          .eq("id", image.id);
+          .select("image_url")
+          .eq("id", imageId)
+          .single();
+        imageUrl = data?.image_url || null;
+      }
 
-        if (updateError) {
-          console.error(`Failed to update image ${image.id}: ${updateError.message}`);
-          results.failed++;
-        } else {
-          results.compressed++;
-          results.details.push({
-            id: image.id,
-            type: "sub",
-            originalSize: result.originalSize,
-            newSize: result.newSize,
-          });
+      if (!imageUrl) {
+        return new Response(JSON.stringify({ error: "Image not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const result = await compressImage(imageUrl, supabaseUrl, supabaseServiceKey);
+
+      if (result) {
+        // Update database with new URL
+        if (imageType === "main") {
+          await supabase
+            .from("gallery_projects")
+            .update({ main_image_url: result.newUrl })
+            .eq("id", projectId);
+        } else if (imageType === "sub" && imageId) {
+          await supabase
+            .from("gallery_project_images")
+            .update({ image_url: result.newUrl })
+            .eq("id", imageId);
         }
+
+        return new Response(JSON.stringify({
+          success: true,
+          compressed: true,
+          originalSize: result.originalSize,
+          newSize: result.newSize,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       } else {
-        results.skipped++;
+        return new Response(JSON.stringify({
+          success: true,
+          compressed: false,
+          reason: "Already under 512KB or failed",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 
-    return new Response(JSON.stringify(results), {
+    return new Response(JSON.stringify({ error: "Invalid mode" }), {
+      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
