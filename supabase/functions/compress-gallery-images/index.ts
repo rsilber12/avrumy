@@ -7,11 +7,16 @@ const corsHeaders = {
 
 const MAX_SIZE_BYTES = 512 * 1024; // 512KB
 
+type CompressResult = 
+  | { status: "compressed"; originalSize: number; newSize: number; newUrl: string }
+  | { status: "skipped"; reason: string; originalSize: number }
+  | { status: "error"; error: string };
+
 async function compressImage(
   imageUrl: string,
   supabaseUrl: string,
   supabaseServiceKey: string
-): Promise<{ originalSize: number; newSize: number; newUrl: string } | null> {
+): Promise<CompressResult> {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -19,7 +24,7 @@ async function compressImage(
     const response = await fetch(imageUrl);
     if (!response.ok) {
       console.error(`Failed to fetch image: ${imageUrl}`);
-      return null;
+      return { status: "error", error: "Failed to fetch image" };
     }
 
     const originalBuffer = await response.arrayBuffer();
@@ -28,7 +33,7 @@ async function compressImage(
     // If already under 512KB, skip compression
     if (originalSize <= MAX_SIZE_BYTES) {
       console.log(`Image already under 512KB: ${imageUrl} (${originalSize} bytes)`);
-      return null;
+      return { status: "skipped", reason: "Already under 512KB", originalSize };
     }
 
     // Convert to base64 for AI processing
@@ -46,7 +51,7 @@ async function compressImage(
     // Use Lovable AI to compress/resize the image
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+      return { status: "error", error: "LOVABLE_API_KEY not configured" };
     }
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -81,7 +86,20 @@ async function compressImage(
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error(`AI compression failed: ${errorText}`);
-      return null;
+      
+      // Parse error for better messaging
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.type === "payment_required") {
+          return { status: "error", error: "Not enough AI credits. Please add credits to continue." };
+        }
+        if (errorJson.type === "rate_limit_exceeded" || aiResponse.status === 429) {
+          return { status: "error", error: "Rate limit exceeded. Please try again later." };
+        }
+        return { status: "error", error: errorJson.message || "AI compression failed" };
+      } catch {
+        return { status: "error", error: "AI compression failed" };
+      }
     }
 
     const aiData = await aiResponse.json();
@@ -89,14 +107,14 @@ async function compressImage(
 
     if (!generatedImage) {
       console.error("No image returned from AI");
-      return null;
+      return { status: "error", error: "No image returned from AI" };
     }
 
     // Extract base64 data from data URL
     const base64Match = generatedImage.match(/^data:image\/(\w+);base64,(.+)$/);
     if (!base64Match) {
       console.error("Invalid image format returned");
-      return null;
+      return { status: "error", error: "Invalid image format returned" };
     }
 
     const [, format, base64Data] = base64Match;
@@ -120,7 +138,7 @@ async function compressImage(
 
     if (uploadError) {
       console.error(`Upload failed: ${uploadError.message}`);
-      return null;
+      return { status: "error", error: `Upload failed: ${uploadError.message}` };
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -128,13 +146,14 @@ async function compressImage(
       .getPublicUrl(fileName);
 
     return {
+      status: "compressed",
       originalSize,
       newSize,
       newUrl: publicUrl,
     };
   } catch (err) {
     console.error(`Error compressing image: ${err}`);
-    return null;
+    return { status: "error", error: err instanceof Error ? err.message : "Unknown error" };
   }
 }
 
@@ -258,7 +277,7 @@ Deno.serve(async (req) => {
 
       const result = await compressImage(imageUrl, supabaseUrl, supabaseServiceKey);
 
-      if (result) {
+      if (result.status === "compressed") {
         // Update database with new URL
         if (imageType === "main") {
           await supabase
@@ -280,12 +299,22 @@ Deno.serve(async (req) => {
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      } else {
+      } else if (result.status === "skipped") {
         return new Response(JSON.stringify({
           success: true,
           compressed: false,
-          reason: "Already under 512KB or failed",
+          reason: result.reason,
+          originalSize: result.originalSize,
         }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } else {
+        // Error case
+        return new Response(JSON.stringify({
+          success: false,
+          error: result.error,
+        }), {
+          status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
