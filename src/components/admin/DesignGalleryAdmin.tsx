@@ -369,6 +369,12 @@ const DesignGalleryAdmin = () => {
       });
 
       if (error) throw error;
+      
+      // Check if the response indicates an error
+      if (data?.success === false && data?.error) {
+        throw new Error(data.error);
+      }
+      
       return data;
     },
     onSuccess: (data) => {
@@ -384,13 +390,13 @@ const DesignGalleryAdmin = () => {
       } else {
         toast({
           title: "No compression needed",
-          description: "Image is already under 512KB",
+          description: data?.reason || "Image is already under 512KB",
         });
       }
     },
     onError: (error: Error) => {
       setCompressingImageId(null);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Compression failed", description: error.message, variant: "destructive" });
     },
   });
 
