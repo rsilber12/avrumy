@@ -251,6 +251,11 @@ const WebsitesAdmin = () => {
 
   return (
     <div className="space-y-6 font-sans">
+      {/* Website Count */}
+      <div className="text-sm text-muted-foreground">
+        {websites?.length || 0} website{(websites?.length || 0) !== 1 ? "s" : ""} added
+      </div>
+
       {/* Add New Website */}
       {isAdding ? (
         <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
