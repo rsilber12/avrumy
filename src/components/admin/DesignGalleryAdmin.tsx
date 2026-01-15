@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown, Shuffle, CheckSquare, X, Minimize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { compressImageClient } from "@/lib/imageCompression";
 
 interface GalleryProject {
   id: string;
@@ -355,27 +356,53 @@ const DesignGalleryAdmin = () => {
   });
 
   const compressSingleMutation = useMutation({
-    mutationFn: async ({ projectId, imageId, imageType }: { projectId: string; imageId?: string; imageType: "main" | "sub" }) => {
+    mutationFn: async ({ projectId, imageId, imageType, imageUrl }: { projectId: string; imageId?: string; imageType: "main" | "sub"; imageUrl: string }) => {
       const trackingId = imageType === "main" ? `main-${projectId}` : imageId!;
       setCompressingImageId(trackingId);
 
-      const { data, error } = await supabase.functions.invoke("compress-gallery-images", {
-        body: {
-          mode: "compress",
-          projectId,
-          imageId: imageType === "sub" ? imageId : undefined,
-          imageType,
-        },
-      });
-
-      if (error) throw error;
+      // Use client-side compression instead of edge function
+      const result = await compressImageClient(imageUrl);
       
-      // Check if the response indicates an error
-      if (data?.success === false && data?.error) {
-        throw new Error(data.error);
+      // If no compression was needed (already under 512KB)
+      if (result.originalSize === result.newSize) {
+        return { compressed: false, reason: "Already under 512KB", originalSize: result.originalSize };
       }
-      
-      return data;
+
+      // Upload the compressed blob to Supabase storage
+      const fileName = `projects/compressed_${crypto.randomUUID()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("gallery")
+        .upload(fileName, result.blob, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("gallery")
+        .getPublicUrl(fileName);
+
+      // Update database with new URL
+      if (imageType === "main") {
+        const { error } = await supabase
+          .from("gallery_projects")
+          .update({ main_image_url: publicUrl })
+          .eq("id", projectId);
+        if (error) throw error;
+      } else if (imageType === "sub" && imageId) {
+        const { error } = await supabase
+          .from("gallery_project_images")
+          .update({ image_url: publicUrl })
+          .eq("id", imageId);
+        if (error) throw error;
+      }
+
+      return {
+        compressed: true,
+        originalSize: result.originalSize,
+        newSize: result.newSize,
+      };
     },
     onSuccess: (data) => {
       setCompressingImageId(null);
@@ -826,7 +853,7 @@ const DesignGalleryAdmin = () => {
                       variant="outline"
                       className="h-8 rounded-lg gap-1.5"
                       disabled={compressingImageId === `main-${project.id}` || compressSingleMutation.isPending}
-                      onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageType: "main" })}
+                      onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageType: "main", imageUrl: project.main_image_url })}
                     >
                       <Minimize2 className="w-3 h-3" />
                       Compress
@@ -914,7 +941,7 @@ const DesignGalleryAdmin = () => {
                             variant="secondary"
                             className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
                             disabled={compressingImageId === img.id || compressSingleMutation.isPending}
-                            onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageId: img.id, imageType: "sub" })}
+                            onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageId: img.id, imageType: "sub", imageUrl: img.image_url })}
                           >
                             <Minimize2 className="w-3 h-3" />
                           </Button>
