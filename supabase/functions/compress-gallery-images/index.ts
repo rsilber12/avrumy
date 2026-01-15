@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
-import { Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,92 +6,113 @@ const corsHeaders = {
 };
 
 const MAX_SIZE_BYTES = 512 * 1024; // 512KB
-const MIN_SIZE_BYTES = 499 * 1024; // 499KB - don't compress below this
-const TARGET_SIZE_BYTES = 505 * 1024; // Target 505KB to stay close to limit
+const MIN_SIZE_BYTES = 450 * 1024; // 450KB - reasonable minimum
+const TARGET_SIZE_BYTES = 500 * 1024; // Target 500KB
 
 type CompressResult = 
   | { status: "compressed"; originalSize: number; newSize: number; newUrl: string }
   | { status: "skipped"; reason: string; originalSize: number }
   | { status: "error"; error: string };
 
-async function compressImage(
+async function compressImageWithAI(
   imageUrl: string,
+  originalSize: number,
   supabaseUrl: string,
   supabaseServiceKey: string
 ): Promise<CompressResult> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  
+  if (!LOVABLE_API_KEY) {
+    return { status: "error", error: "LOVABLE_API_KEY not configured" };
+  }
+
+  // Calculate target dimensions - aim for ~500KB
+  const reductionRatio = Math.sqrt(TARGET_SIZE_BYTES / originalSize);
+  const targetPercent = Math.round(reductionRatio * 100);
+
+  console.log(`Using AI to resize to ~${targetPercent}% (target: ~500KB from ${originalSize} bytes)`);
+
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Fetch the original image
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      console.error(`Failed to fetch image: ${imageUrl}`);
-      return { status: "error", error: "Failed to fetch image" };
-    }
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Resize this image to approximately ${targetPercent}% of its current dimensions while maintaining the exact same aspect ratio and visual quality. Output only the resized image.`,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageUrl,
+                },
+              },
+            ],
+          },
+        ],
+        modalities: ["image", "text"],
+      }),
+    });
 
-    const originalBuffer = await response.arrayBuffer();
-    const originalSize = originalBuffer.byteLength;
-
-    // If already under 512KB, skip compression
-    if (originalSize <= MAX_SIZE_BYTES) {
-      console.log(`Image already under 512KB: ${imageUrl} (${originalSize} bytes)`);
-      return { status: "skipped", reason: "Already under 512KB", originalSize };
-    }
-
-    console.log(`Compressing image from ${originalSize} bytes...`);
-
-    // Decode the image using ImageScript
-    const image = await Image.decode(new Uint8Array(originalBuffer));
-    
-    // Calculate scale factor to reduce file size - aim for just under 512KB
-    const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / originalSize);
-    const newWidth = Math.round(image.width * scaleFactor);
-    const newHeight = Math.round(image.height * scaleFactor);
-    
-    console.log(`Resizing from ${image.width}x${image.height} to ${newWidth}x${newHeight}`);
-    
-    // Resize the image
-    image.resize(newWidth, newHeight);
-    
-    // Start with high quality and find optimal quality between 499KB-512KB
-    let quality = 95;
-    let encoded = await image.encodeJPEG(quality);
-    
-    // If too large, reduce quality until under 512KB
-    while (encoded.byteLength > MAX_SIZE_BYTES && quality > 50) {
-      quality -= 5;
-      encoded = await image.encodeJPEG(quality);
-      console.log(`Quality ${quality}: ${encoded.byteLength} bytes`);
-    }
-    
-    // If too small (under 499KB), try to increase quality to get closer to target
-    if (encoded.byteLength < MIN_SIZE_BYTES && quality < 95) {
-      // Re-decode original to try with less aggressive resize
-      const origImage = await Image.decode(new Uint8Array(originalBuffer));
-      const largerScale = Math.sqrt(MAX_SIZE_BYTES / originalSize) * 0.98; // 98% of max
-      const largerWidth = Math.round(origImage.width * largerScale);
-      const largerHeight = Math.round(origImage.height * largerScale);
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error(`AI compression failed: ${errorText}`);
       
-      origImage.resize(largerWidth, largerHeight);
-      let newEncoded = await origImage.encodeJPEG(90);
-      
-      // Fine-tune quality to stay in 499KB-512KB range
-      if (newEncoded.byteLength <= MAX_SIZE_BYTES && newEncoded.byteLength >= MIN_SIZE_BYTES) {
-        encoded = newEncoded;
-        console.log(`Adjusted to ${largerWidth}x${largerHeight} at quality 90: ${encoded.byteLength} bytes`);
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.type === "payment_required") {
+          return { status: "error", error: "Not enough AI credits. Please add credits to continue." };
+        }
+        if (errorJson.type === "rate_limit_exceeded" || aiResponse.status === 429) {
+          return { status: "error", error: "Rate limit exceeded. Please try again later." };
+        }
+        return { status: "error", error: errorJson.message || "AI compression failed" };
+      } catch {
+        return { status: "error", error: `AI error: ${aiResponse.status}` };
       }
     }
-    
-    const newSize = encoded.byteLength;
-    console.log(`Compressed to ${newSize} bytes (quality: ${quality})`);
+
+    const aiData = await aiResponse.json();
+    const generatedImage = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (!generatedImage) {
+      console.error("No image returned from AI");
+      return { status: "error", error: "No image returned from AI" };
+    }
+
+    // Extract base64 data from data URL
+    const base64Match = generatedImage.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!base64Match) {
+      console.error("Invalid image format returned");
+      return { status: "error", error: "Invalid image format returned" };
+    }
+
+    const [, format, base64Data] = base64Match;
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const newSize = bytes.byteLength;
+    console.log(`AI compressed to ${newSize} bytes`);
 
     // Upload compressed image to storage
-    const fileName = `projects/compressed_${crypto.randomUUID()}.jpg`;
+    const fileName = `projects/compressed_${crypto.randomUUID()}.${format === "png" ? "png" : "jpg"}`;
     
     const { error: uploadError } = await supabase.storage
       .from("gallery")
-      .upload(fileName, encoded, {
-        contentType: "image/jpeg",
+      .upload(fileName, bytes, {
+        contentType: `image/${format}`,
         upsert: true,
       });
 
@@ -111,6 +131,52 @@ async function compressImage(
       newSize,
       newUrl: publicUrl,
     };
+  } catch (err) {
+    console.error(`Error in AI compression: ${err}`);
+    return { status: "error", error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+async function compressImage(
+  imageUrl: string,
+  supabaseUrl: string,
+  supabaseServiceKey: string
+): Promise<CompressResult> {
+  try {
+    // First, check size with HEAD request to avoid downloading large files unnecessarily
+    const headResponse = await fetch(imageUrl, { method: "HEAD" });
+    const contentLength = headResponse.headers.get("content-length");
+    
+    if (contentLength) {
+      const size = parseInt(contentLength, 10);
+      if (size <= MAX_SIZE_BYTES) {
+        console.log(`Image already under 512KB: ${size} bytes`);
+        return { status: "skipped", reason: "Already under 512KB", originalSize: size };
+      }
+      
+      // For large images, use AI-based compression (passes URL directly, no memory issues)
+      console.log(`Image is ${size} bytes, using AI compression...`);
+      return await compressImageWithAI(imageUrl, size, supabaseUrl, supabaseServiceKey);
+    }
+
+    // If no content-length header, fetch the image to check size
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${imageUrl}`);
+      return { status: "error", error: "Failed to fetch image" };
+    }
+
+    const originalBuffer = await response.arrayBuffer();
+    const originalSize = originalBuffer.byteLength;
+
+    if (originalSize <= MAX_SIZE_BYTES) {
+      console.log(`Image already under 512KB: ${originalSize} bytes`);
+      return { status: "skipped", reason: "Already under 512KB", originalSize };
+    }
+
+    // Use AI compression for images over 512KB
+    console.log(`Image is ${originalSize} bytes, using AI compression...`);
+    return await compressImageWithAI(imageUrl, originalSize, supabaseUrl, supabaseServiceKey);
   } catch (err) {
     console.error(`Error compressing image: ${err}`);
     return { status: "error", error: err instanceof Error ? err.message : "Unknown error" };
