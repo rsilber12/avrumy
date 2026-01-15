@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ const DesignGalleryAdmin = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [fileSizes, setFileSizes] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,39 @@ const DesignGalleryAdmin = () => {
     },
     enabled: !!editingProject,
   });
+
+  // Fetch file sizes for all projects
+  useEffect(() => {
+    if (!projects) return;
+    
+    const fetchSizes = async () => {
+      const sizes: Record<string, number> = {};
+      
+      await Promise.all(
+        projects.map(async (project) => {
+          try {
+            const response = await fetch(project.main_image_url, { method: "HEAD" });
+            const contentLength = response.headers.get("content-length");
+            if (contentLength) {
+              sizes[project.id] = parseInt(contentLength, 10);
+            }
+          } catch {
+            // Ignore errors
+          }
+        })
+      );
+      
+      setFileSizes(sizes);
+    };
+    
+    fetchSizes();
+  }, [projects]);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
@@ -565,10 +599,15 @@ const DesignGalleryAdmin = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-4">
-                    <p className="text-sm truncate font-medium">
+                  <div className="p-4 flex items-center justify-between">
+                    <p className="text-sm truncate font-medium flex-1">
                       {project.title || "Untitled"}
                     </p>
+                    {fileSizes[project.id] && (
+                      <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                        {formatFileSize(fileSizes[project.id])}
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -588,10 +627,15 @@ const DesignGalleryAdmin = () => {
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <div className="p-4">
-                      <p className="text-sm truncate font-medium">
+                    <div className="p-4 flex items-center justify-between">
+                      <p className="text-sm truncate font-medium flex-1">
                         {project.title || "Untitled"}
                       </p>
+                      {fileSizes[project.id] && (
+                        <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                          {formatFileSize(fileSizes[project.id])}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </DialogTrigger>
