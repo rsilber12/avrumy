@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Loader2, Plus, Pencil, X, Check, ChevronUp, ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Loader2, Plus, Pencil, X, Check, ChevronUp, ChevronDown, Shuffle, CheckSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface MusicArtwork {
@@ -22,6 +23,8 @@ const MusicArtworkAdmin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -178,6 +181,66 @@ const MusicArtworkAdmin = () => {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from("music_artworks")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["music-artworks"] });
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      toast({ title: `${selectedIds.size} artwork(s) deleted` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const shuffleMutation = useMutation({
+    mutationFn: async () => {
+      if (!artworks || artworks.length < 2) return;
+      
+      const shuffled = [...artworks].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < shuffled.length; i++) {
+        await supabase
+          .from("music_artworks")
+          .update({ display_order: i + 1 })
+          .eq("id", shuffled[i].id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["music-artworks"] });
+      toast({ title: "Order shuffled" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (!artworks) return;
+    if (selectedIds.size === artworks.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(artworks.map((a) => a.id)));
+    }
+  };
+
   return (
     <div className="space-y-6 font-sans">
       {/* Add New */}
@@ -207,34 +270,98 @@ const MusicArtworkAdmin = () => {
         </div>
       </div>
 
+      {/* Action Bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant={isSelectMode ? "secondary" : "outline"}
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => {
+            setIsSelectMode(!isSelectMode);
+            setSelectedIds(new Set());
+          }}
+        >
+          {isSelectMode ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+          {isSelectMode ? "Cancel" : "Select"}
+        </Button>
+        
+        {isSelectMode && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl"
+              onClick={toggleSelectAll}
+            >
+              {selectedIds.size === artworks?.length ? "Deselect All" : "Select All"}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 rounded-xl gap-2"
+              disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+              onClick={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedIds.size})
+            </Button>
+          </>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => shuffleMutation.mutate()}
+          disabled={shuffleMutation.isPending || !artworks || artworks.length < 2}
+        >
+          <Shuffle className="w-4 h-4" />
+          Shuffle
+        </Button>
+      </div>
+
       {/* List */}
       <div className="space-y-3">
         {artworks?.map((artwork, index) => (
           <div 
             key={artwork.id} 
-            className="group relative rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+            className={`group relative rounded-2xl bg-card border-2 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 ${
+              isSelectMode && selectedIds.has(artwork.id) ? "border-primary" : "border-border/50"
+            }`}
+            onClick={isSelectMode ? () => toggleSelect(artwork.id) : undefined}
           >
+            {/* Select checkbox */}
+            {isSelectMode && (
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                <Checkbox
+                  checked={selectedIds.has(artwork.id)}
+                  className="w-5 h-5 rounded-md"
+                />
+              </div>
+            )}
             {/* Reorder buttons */}
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="w-7 h-7 rounded-lg hover:bg-muted"
-                onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "up" })}
-                disabled={index === 0}
-              >
-                <ChevronUp className="w-4 h-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="w-7 h-7 rounded-lg hover:bg-muted"
-                onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "down" })}
-                disabled={index === (artworks?.length || 0) - 1}
-              >
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </div>
+            {!isSelectMode && (
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="w-7 h-7 rounded-lg hover:bg-muted"
+                  onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "up" })}
+                  disabled={index === 0}
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="w-7 h-7 rounded-lg hover:bg-muted"
+                  onClick={() => reorderMutation.mutate({ id: artwork.id, direction: "down" })}
+                  disabled={index === (artworks?.length || 0) - 1}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
             <div className="p-5 pl-14">
               <div className="flex gap-4">
                 <div className="w-32 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
@@ -245,7 +372,7 @@ const MusicArtworkAdmin = () => {
                   />
                 </div>
                 <div className="flex-1 min-w-0 py-1">
-                  {editingId === artwork.id ? (
+                  {editingId === artwork.id && !isSelectMode ? (
                     <div className="flex gap-2 items-center">
                       <Input
                         value={editTitle}
@@ -276,40 +403,42 @@ const MusicArtworkAdmin = () => {
                     {artwork.youtube_url}
                   </p>
                 </div>
-                <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 rounded-lg hover:bg-muted"
-                    onClick={() => {
-                      setEditingId(artwork.id);
-                      setEditTitle(artwork.title);
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 rounded-lg hover:bg-muted"
-                    onClick={() => refetchMutation.mutate(artwork)}
-                    disabled={refetchMutation.isPending}
-                  >
-                    {refetchMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <span className="text-xs">↻</span>
-                    )}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => deleteMutation.mutate(artwork.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {!isSelectMode && (
+                  <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 rounded-lg hover:bg-muted"
+                      onClick={() => {
+                        setEditingId(artwork.id);
+                        setEditTitle(artwork.title);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 rounded-lg hover:bg-muted"
+                      onClick={() => refetchMutation.mutate(artwork)}
+                      disabled={refetchMutation.isPending}
+                    >
+                      {refetchMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <span className="text-xs">↻</span>
+                      )}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteMutation.mutate(artwork.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown, Shuffle, CheckSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GalleryProject {
@@ -32,6 +33,8 @@ const DesignGalleryAdmin = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -201,6 +204,66 @@ const DesignGalleryAdmin = () => {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from("gallery_projects")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      toast({ title: `${selectedIds.size} project(s) deleted` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const shuffleMutation = useMutation({
+    mutationFn: async () => {
+      if (!projects || projects.length < 2) return;
+      
+      const shuffled = [...projects].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < shuffled.length; i++) {
+        await supabase
+          .from("gallery_projects")
+          .update({ display_order: i + 1 })
+          .eq("id", shuffled[i].id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
+      toast({ title: "Order shuffled" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (!projects) return;
+    if (selectedIds.size === projects.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(projects.map((p) => p.id)));
+    }
+  };
+
   const addSubImageMutation = useMutation({
     mutationFn: async ({ projectId, file }: { projectId: string; file: File }) => {
       const imageUrl = await uploadImage(file);
@@ -352,52 +415,117 @@ const DesignGalleryAdmin = () => {
         </div>
       </div>
 
+      {/* Action Bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant={isSelectMode ? "secondary" : "outline"}
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => {
+            setIsSelectMode(!isSelectMode);
+            setSelectedIds(new Set());
+          }}
+        >
+          {isSelectMode ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+          {isSelectMode ? "Cancel" : "Select"}
+        </Button>
+        
+        {isSelectMode && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl"
+              onClick={toggleSelectAll}
+            >
+              {selectedIds.size === projects?.length ? "Deselect All" : "Select All"}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 rounded-xl gap-2"
+              disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+              onClick={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedIds.size})
+            </Button>
+          </>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => shuffleMutation.mutate()}
+          disabled={shuffleMutation.isPending || !projects || projects.length < 2}
+        >
+          <Shuffle className="w-4 h-4" />
+          Shuffle
+        </Button>
+      </div>
+
       {/* Projects Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {projects?.map((project, index) => (
           <Dialog key={project.id}>
             <div className="relative group">
-              {/* Reorder buttons */}
-              <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    reorderMutation.mutate({ id: project.id, direction: "up" });
-                  }}
-                  disabled={index === 0}
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    reorderMutation.mutate({ id: project.id, direction: "down" });
-                  }}
-                  disabled={index === (projects?.length || 0) - 1}
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              </div>
-              <DialogTrigger asChild>
+              {/* Select checkbox */}
+              {isSelectMode && (
                 <div 
-                  className="cursor-pointer rounded-2xl overflow-hidden bg-card border border-border/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
-                  onClick={() => {
-                    setEditingProject(project);
-                    setEditTitle(project.title || "");
-                    setEditDescription(project.description || "");
+                  className="absolute top-2 left-2 z-20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelect(project.id);
                   }}
+                >
+                  <Checkbox
+                    checked={selectedIds.has(project.id)}
+                    className="w-6 h-6 rounded-lg border-2 bg-background/80 backdrop-blur-sm data-[state=checked]:bg-primary"
+                  />
+                </div>
+              )}
+              {/* Reorder buttons */}
+              {!isSelectMode && (
+                <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      reorderMutation.mutate({ id: project.id, direction: "up" });
+                    }}
+                    disabled={index === 0}
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      reorderMutation.mutate({ id: project.id, direction: "down" });
+                    }}
+                    disabled={index === (projects?.length || 0) - 1}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              {isSelectMode ? (
+                <div 
+                  className={`cursor-pointer rounded-2xl overflow-hidden bg-card border-2 transition-all duration-300 ${
+                    selectedIds.has(project.id) ? "border-primary" : "border-border/50"
+                  }`}
+                  onClick={() => toggleSelect(project.id)}
                 >
                   <div className="aspect-square overflow-hidden">
                     <img
                       src={project.main_image_url}
                       alt={project.title || "Project"}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-4">
@@ -406,7 +534,31 @@ const DesignGalleryAdmin = () => {
                     </p>
                   </div>
                 </div>
-              </DialogTrigger>
+              ) : (
+                <DialogTrigger asChild>
+                  <div 
+                    className="cursor-pointer rounded-2xl overflow-hidden bg-card border border-border/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
+                    onClick={() => {
+                      setEditingProject(project);
+                      setEditTitle(project.title || "");
+                      setEditDescription(project.description || "");
+                    }}
+                  >
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={project.main_image_url}
+                        alt={project.title || "Project"}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm truncate font-medium">
+                        {project.title || "Untitled"}
+                      </p>
+                    </div>
+                  </div>
+                </DialogTrigger>
+              )}
             </div>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-sans rounded-2xl border-border/50">
               <DialogHeader>
