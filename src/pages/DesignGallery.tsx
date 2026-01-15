@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import Masonry from "react-masonry-css";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageVisit } from "@/hooks/useAnalytics";
 import GlowingCard from "@/components/GlowingCard";
@@ -21,6 +22,13 @@ const DesignGallery = () => {
       return data;
     },
   });
+
+  const breakpointColumns = {
+    default: 4,
+    1024: 4,
+    768: 2,
+    640: 2,
+  };
 
   return (
     <div className="min-h-screen bg-background px-6 py-12">
@@ -45,9 +53,13 @@ const DesignGallery = () => {
       {/* Gallery Grid */}
       <div className="max-w-7xl mx-auto">
         {projects && projects.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-auto items-start">
+          <Masonry
+            breakpointCols={breakpointColumns}
+            className="flex -ml-4 w-auto"
+            columnClassName="pl-4 bg-clip-padding"
+          >
             {projects.map((project) => (
-              <div key={project.id}>
+              <div key={project.id} className="mb-4">
                 <GlowingCard className="rounded-xl cursor-pointer">
                   <div
                     className="overflow-hidden rounded-xl"
@@ -63,7 +75,7 @@ const DesignGallery = () => {
                 </GlowingCard>
               </div>
             ))}
-          </div>
+          </Masonry>
         ) : !isLoading ? (
           <p className="text-center text-muted-foreground">No projects added yet</p>
         ) : null}
