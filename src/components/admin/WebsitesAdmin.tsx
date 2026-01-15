@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, ArrowUp, ArrowDown, Upload, RefreshCw } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Plus, ArrowUp, ArrowDown, Upload, RefreshCw, Shuffle, CheckSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const WebsitesAdmin = () => {
   const [newUrl, setNewUrl] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [isCapturing, setIsCapturing] = useState<string | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -184,6 +187,68 @@ const WebsitesAdmin = () => {
     }
   };
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from("websites")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["websites-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["websites"] });
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      toast({ title: `${selectedIds.size} website(s) deleted` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const shuffleMutation = useMutation({
+    mutationFn: async () => {
+      if (!websites || websites.length < 2) return;
+      
+      const shuffled = [...websites].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < shuffled.length; i++) {
+        await supabase
+          .from("websites")
+          .update({ display_order: i + 1 })
+          .eq("id", shuffled[i].id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["websites-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["websites"] });
+      toast({ title: "Order shuffled" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (!websites) return;
+    if (selectedIds.size === websites.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(websites.map((w) => w.id)));
+    }
+  };
+
   return (
     <div className="space-y-6 font-sans">
       {/* Add New Website */}
@@ -235,6 +300,56 @@ const WebsitesAdmin = () => {
         </Button>
       )}
 
+      {/* Action Bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant={isSelectMode ? "secondary" : "outline"}
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => {
+            setIsSelectMode(!isSelectMode);
+            setSelectedIds(new Set());
+          }}
+        >
+          {isSelectMode ? <X className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+          {isSelectMode ? "Cancel" : "Select"}
+        </Button>
+        
+        {isSelectMode && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl"
+              onClick={toggleSelectAll}
+            >
+              {selectedIds.size === websites?.length ? "Deselect All" : "Select All"}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 rounded-xl gap-2"
+              disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+              onClick={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedIds.size})
+            </Button>
+          </>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => shuffleMutation.mutate()}
+          disabled={shuffleMutation.isPending || !websites || websites.length < 2}
+        >
+          <Shuffle className="w-4 h-4" />
+          Shuffle
+        </Button>
+      </div>
+
       {/* Website List */}
       {isLoading ? (
         <div className="text-muted-foreground text-center py-12">Loading...</div>
@@ -243,10 +358,23 @@ const WebsitesAdmin = () => {
           {websites.map((website, index) => (
             <div 
               key={website.id} 
-              className="group rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              className={`group rounded-2xl bg-card border-2 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 ${
+                isSelectMode && selectedIds.has(website.id) ? "border-primary" : "border-border/50"
+              }`}
+              onClick={isSelectMode ? () => toggleSelect(website.id) : undefined}
             >
               <div className="p-5">
                 <div className="flex gap-4">
+                  {/* Checkbox */}
+                  {isSelectMode && (
+                    <div className="flex items-center">
+                      <Checkbox
+                        checked={selectedIds.has(website.id)}
+                        className="w-5 h-5 rounded-md"
+                      />
+                    </div>
+                  )}
+                  
                   {/* Thumbnail */}
                   <div className="w-40 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
                     <img
@@ -264,73 +392,78 @@ const WebsitesAdmin = () => {
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-xs text-muted-foreground hover:text-foreground truncate block mt-1 transition-colors"
+                      onClick={(e) => isSelectMode && e.preventDefault()}
                     >
                       {website.url}
                     </a>
 
                     {/* Actions */}
-                    <div className="flex gap-2 mt-3 flex-wrap opacity-0 group-hover:opacity-100 transition-opacity">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={(el) => { fileInputRefs.current[website.id] = el; }}
-                        onChange={(e) => handleFileChange(website.id, e)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs h-8 rounded-lg"
-                        onClick={() => fileInputRefs.current[website.id]?.click()}
-                      >
-                        <Upload className="w-3 h-3" />
-                        Upload
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs h-8 rounded-lg"
-                        disabled={isCapturing === website.id}
-                        onClick={() => {
-                          setIsCapturing(website.id);
-                          regenerateScreenshot.mutate({ id: website.id, url: website.url });
-                        }}
-                      >
-                        <RefreshCw className={`w-3 h-3 ${isCapturing === website.id ? 'animate-spin' : ''}`} />
-                        Refresh
-                      </Button>
-                    </div>
+                    {!isSelectMode && (
+                      <div className="flex gap-2 mt-3 flex-wrap opacity-0 group-hover:opacity-100 transition-opacity">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={(el) => { fileInputRefs.current[website.id] = el; }}
+                          onChange={(e) => handleFileChange(website.id, e)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs h-8 rounded-lg"
+                          onClick={() => fileInputRefs.current[website.id]?.click()}
+                        >
+                          <Upload className="w-3 h-3" />
+                          Upload
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs h-8 rounded-lg"
+                          disabled={isCapturing === website.id}
+                          onClick={() => {
+                            setIsCapturing(website.id);
+                            regenerateScreenshot.mutate({ id: website.id, url: website.url });
+                          }}
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isCapturing === website.id ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Order & Delete Controls */}
-                  <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-lg hover:bg-muted"
-                      onClick={() => moveItem(index, 'up')}
-                      disabled={index === 0}
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-lg hover:bg-muted"
-                      onClick={() => moveItem(index, 'down')}
-                      disabled={index === websites.length - 1}
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteWebsite.mutate(website.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {!isSelectMode && (
+                    <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-muted"
+                        onClick={() => moveItem(index, 'up')}
+                        disabled={index === 0}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-muted"
+                        onClick={() => moveItem(index, 'down')}
+                        disabled={index === websites.length - 1}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => deleteWebsite.mutate(website.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
