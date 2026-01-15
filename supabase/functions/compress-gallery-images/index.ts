@@ -155,21 +155,29 @@ Deno.serve(async (req) => {
     if (mode === "list") {
       const { data: projects } = await supabase
         .from("gallery_projects")
-        .select("id, main_image_url");
+        .select("id, main_image_url, display_order")
+        .order("display_order", { ascending: true });
 
       const { data: projectImages } = await supabase
         .from("gallery_project_images")
-        .select("id, image_url, project_id");
+        .select("id, image_url, project_id, display_order")
+        .order("display_order", { ascending: true });
 
-      const imagesToCompress: { id: string; projectId: string; type: "main" | "sub"; url: string }[] = [];
+      const imagesToCompress: { id: string; projectId: string; type: "main" | "sub"; url: string; displayOrder: number }[] = [];
 
-      // Check main images
+      // Check main images (already ordered by display_order)
       for (const project of projects || []) {
         try {
           const response = await fetch(project.main_image_url, { method: "HEAD" });
           const contentLength = response.headers.get("content-length");
           if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ id: project.id, projectId: project.id, type: "main", url: project.main_image_url });
+            imagesToCompress.push({ 
+              id: project.id, 
+              projectId: project.id, 
+              type: "main", 
+              url: project.main_image_url,
+              displayOrder: project.display_order ?? 0
+            });
           }
         } catch {
           // Skip if can't check
@@ -182,12 +190,21 @@ Deno.serve(async (req) => {
           const response = await fetch(image.image_url, { method: "HEAD" });
           const contentLength = response.headers.get("content-length");
           if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ id: image.id, projectId: image.project_id, type: "sub", url: image.image_url });
+            imagesToCompress.push({ 
+              id: image.id, 
+              projectId: image.project_id, 
+              type: "sub", 
+              url: image.image_url,
+              displayOrder: image.display_order ?? 0
+            });
           }
         } catch {
           // Skip if can't check
         }
       }
+
+      // Sort by displayOrder to ensure compression starts from first visible image
+      imagesToCompress.sort((a, b) => a.displayOrder - b.displayOrder);
 
       return new Response(JSON.stringify({ images: imagesToCompress }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
