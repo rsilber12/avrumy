@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 const MAX_SIZE_BYTES = 512 * 1024; // 512KB
-const TARGET_SIZE_BYTES = 400 * 1024; // Target 400KB to have some margin
+const MIN_SIZE_BYTES = 499 * 1024; // 499KB - don't compress below this
+const TARGET_SIZE_BYTES = 505 * 1024; // Target 505KB to stay close to limit
 
 type CompressResult = 
   | { status: "compressed"; originalSize: number; newSize: number; newUrl: string }
@@ -43,7 +44,7 @@ async function compressImage(
     // Decode the image using ImageScript
     const image = await Image.decode(new Uint8Array(originalBuffer));
     
-    // Calculate scale factor to reduce file size
+    // Calculate scale factor to reduce file size - aim for just under 512KB
     const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / originalSize);
     const newWidth = Math.round(image.width * scaleFactor);
     const newHeight = Math.round(image.height * scaleFactor);
@@ -53,15 +54,33 @@ async function compressImage(
     // Resize the image
     image.resize(newWidth, newHeight);
     
-    // Encode as JPEG with quality adjustment
-    let quality = 85;
+    // Start with high quality and find optimal quality between 499KB-512KB
+    let quality = 95;
     let encoded = await image.encodeJPEG(quality);
     
-    // If still too large, reduce quality iteratively
-    while (encoded.byteLength > MAX_SIZE_BYTES && quality > 30) {
-      quality -= 10;
+    // If too large, reduce quality until under 512KB
+    while (encoded.byteLength > MAX_SIZE_BYTES && quality > 50) {
+      quality -= 5;
       encoded = await image.encodeJPEG(quality);
       console.log(`Quality ${quality}: ${encoded.byteLength} bytes`);
+    }
+    
+    // If too small (under 499KB), try to increase quality to get closer to target
+    if (encoded.byteLength < MIN_SIZE_BYTES && quality < 95) {
+      // Re-decode original to try with less aggressive resize
+      const origImage = await Image.decode(new Uint8Array(originalBuffer));
+      const largerScale = Math.sqrt(MAX_SIZE_BYTES / originalSize) * 0.98; // 98% of max
+      const largerWidth = Math.round(origImage.width * largerScale);
+      const largerHeight = Math.round(origImage.height * largerScale);
+      
+      origImage.resize(largerWidth, largerHeight);
+      let newEncoded = await origImage.encodeJPEG(90);
+      
+      // Fine-tune quality to stay in 499KB-512KB range
+      if (newEncoded.byteLength <= MAX_SIZE_BYTES && newEncoded.byteLength >= MIN_SIZE_BYTES) {
+        encoded = newEncoded;
+        console.log(`Adjusted to ${largerWidth}x${largerHeight} at quality 90: ${encoded.byteLength} bytes`);
+      }
     }
     
     const newSize = encoded.byteLength;
