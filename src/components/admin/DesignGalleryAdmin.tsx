@@ -417,6 +417,11 @@ const DesignGalleryAdmin = () => {
 
   return (
     <div className="space-y-6 font-sans">
+      {/* Image Count */}
+      <div className="text-sm text-muted-foreground">
+        {projects?.length || 0} image{(projects?.length || 0) !== 1 ? "s" : ""} uploaded
+      </div>
+
       {/* Drag & Drop Upload Zone */}
       <div
         ref={dropZoneRef}
@@ -470,9 +475,6 @@ const DesignGalleryAdmin = () => {
 
       {/* Action Bar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="text-sm text-muted-foreground mr-2">
-          {projects?.length || 0} image{(projects?.length || 0) !== 1 ? "s" : ""} uploaded
-        </div>
         <Button
           variant={isSelectMode ? "secondary" : "outline"}
           size="sm"
