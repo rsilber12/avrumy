@@ -42,15 +42,12 @@ const DesignGallery = () => {
         </h1>
       </header>
 
-      {/* Gallery Grid - Masonry Style */}
+      {/* Gallery Grid */}
       <div className="max-w-7xl mx-auto">
         {projects && projects.length > 0 ? (
-          <div className="columns-2 lg:columns-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {projects.map((project) => (
-              <div
-                key={project.id}
-                className="break-inside-avoid mb-4"
-              >
+              <div key={project.id}>
                 <GlowingCard className="rounded-xl cursor-pointer">
                   <div
                     className="overflow-hidden rounded-xl"
