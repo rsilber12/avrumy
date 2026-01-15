@@ -243,6 +243,11 @@ const MusicArtworkAdmin = () => {
 
   return (
     <div className="space-y-6 font-sans">
+      {/* Artwork Count */}
+      <div className="text-sm text-muted-foreground">
+        {artworks?.length || 0} artwork{(artworks?.length || 0) !== 1 ? "s" : ""} added
+      </div>
+
       {/* Add New */}
       <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
         <div className="p-6">
