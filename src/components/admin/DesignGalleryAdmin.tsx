@@ -285,46 +285,102 @@ const DesignGalleryAdmin = () => {
 
   const compressMutation = useMutation({
     mutationFn: async () => {
-      // First, get list of images that need compression
-      const { data: listData, error: listError } = await supabase.functions.invoke("compress-gallery-images", {
-        body: { mode: "list" },
-      });
-      if (listError) throw listError;
+      if (!projects) return { compressed: 0, total: 0 };
 
-      const images = listData.images as { id: string; projectId: string; type: "main" | "sub"; url: string }[];
-      
-      if (images.length === 0) {
+      // Collect all images that need compression (over 512KB)
+      const imagesToCompress: { projectId: string; imageId?: string; type: "main" | "sub"; url: string }[] = [];
+      const MAX_SIZE = 512 * 1024;
+
+      // Check main images
+      for (const project of projects) {
+        try {
+          const response = await fetch(project.main_image_url, { method: "HEAD" });
+          const contentLength = response.headers.get("content-length");
+          if (contentLength && parseInt(contentLength, 10) > MAX_SIZE) {
+            imagesToCompress.push({
+              projectId: project.id,
+              type: "main",
+              url: project.main_image_url,
+            });
+          }
+        } catch {
+          // Skip if can't check size
+        }
+      }
+
+      // Check sub-images for all projects
+      const { data: allSubImages } = await supabase
+        .from("gallery_project_images")
+        .select("*");
+
+      if (allSubImages) {
+        for (const subImage of allSubImages) {
+          try {
+            const response = await fetch(subImage.image_url, { method: "HEAD" });
+            const contentLength = response.headers.get("content-length");
+            if (contentLength && parseInt(contentLength, 10) > MAX_SIZE) {
+              imagesToCompress.push({
+                projectId: subImage.project_id,
+                imageId: subImage.id,
+                type: "sub",
+                url: subImage.image_url,
+              });
+            }
+          } catch {
+            // Skip if can't check size
+          }
+        }
+      }
+
+      if (imagesToCompress.length === 0) {
         return { compressed: 0, total: 0 };
       }
 
-      setCompressionProgress({ current: 0, total: images.length });
+      setCompressionProgress({ current: 0, total: imagesToCompress.length });
       let compressed = 0;
 
-      // Process each image one at a time
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        setCompressionProgress({ current: i + 1, total: images.length });
+      // Process each image using client-side compression
+      for (let i = 0; i < imagesToCompress.length; i++) {
+        const img = imagesToCompress[i];
+        setCompressionProgress({ current: i + 1, total: imagesToCompress.length });
         setCompressingProjectId(img.projectId);
 
         try {
-          const { data, error } = await supabase.functions.invoke("compress-gallery-images", {
-            body: {
-              mode: "compress",
-              projectId: img.projectId,
-              imageId: img.type === "sub" ? img.id : undefined,
-              imageType: img.type,
-            },
-          });
+          // Use client-side compression
+          const result = await compressImageClient(img.url);
 
-          if (!error && data?.compressed) {
-            compressed++;
-            // Refresh file sizes and data after each successful compression
-            queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
-            // Update file size for the compressed project
-            if (data.newSize) {
+          if (result.originalSize !== result.newSize) {
+            // Upload the compressed blob
+            const fileName = `projects/compressed_${crypto.randomUUID()}.jpg`;
+            const { error: uploadError } = await supabase.storage
+              .from("gallery")
+              .upload(fileName, result.blob, {
+                contentType: "image/jpeg",
+                upsert: true,
+              });
+
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from("gallery")
+                .getPublicUrl(fileName);
+
+              // Update database with new URL
+              if (img.type === "main") {
+                await supabase
+                  .from("gallery_projects")
+                  .update({ main_image_url: publicUrl })
+                  .eq("id", img.projectId);
+              } else if (img.type === "sub" && img.imageId) {
+                await supabase
+                  .from("gallery_project_images")
+                  .update({ image_url: publicUrl })
+                  .eq("id", img.imageId);
+              }
+
+              compressed++;
               setFileSizes(prev => ({
                 ...prev,
-                [img.projectId]: data.newSize
+                [img.projectId]: result.newSize
               }));
             }
           }
@@ -334,7 +390,7 @@ const DesignGalleryAdmin = () => {
       }
 
       setCompressingProjectId(null);
-      return { compressed, total: images.length };
+      return { compressed, total: imagesToCompress.length };
     },
     onSuccess: (data) => {
       setCompressionProgress(null);
