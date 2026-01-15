@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown, Shuffle, CheckSquare, X } from "lucide-react";
+import { Trash2, Loader2, Plus, Upload, ChevronUp, ChevronDown, Shuffle, CheckSquare, X, Minimize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GalleryProject {
@@ -245,6 +245,25 @@ const DesignGalleryAdmin = () => {
     },
   });
 
+  const compressMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("compress-gallery-images");
+      if (error) throw error;
+      return data as { processed: number; compressed: number; skipped: number; failed: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery-project-images"] });
+      toast({
+        title: "Compression complete",
+        description: `${data.compressed} images compressed, ${data.skipped} already under 512KB, ${data.failed} failed`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
@@ -462,6 +481,21 @@ const DesignGalleryAdmin = () => {
         >
           <Shuffle className="w-4 h-4" />
           Shuffle
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 rounded-xl gap-2"
+          onClick={() => compressMutation.mutate()}
+          disabled={compressMutation.isPending || !projects || projects.length === 0}
+        >
+          {compressMutation.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Minimize2 className="w-4 h-4" />
+          )}
+          {compressMutation.isPending ? "Compressing..." : "Compress All"}
         </Button>
       </div>
 
