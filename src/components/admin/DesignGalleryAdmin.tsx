@@ -461,6 +461,11 @@ const DesignGalleryAdmin = () => {
       {/* Image Count */}
       <div className="text-sm text-muted-foreground">
         {projects?.length || 0} image{(projects?.length || 0) !== 1 ? "s" : ""} uploaded
+        {Object.keys(fileSizes).length > 0 && (
+          <span className="ml-2">
+            • {formatFileSize(Object.values(fileSizes).reduce((sum, size) => sum + size, 0))} total
+          </span>
+        )}
       </div>
 
       {/* Drag & Drop Upload Zone */}
