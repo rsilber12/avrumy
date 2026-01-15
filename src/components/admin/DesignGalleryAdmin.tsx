@@ -38,6 +38,7 @@ const DesignGalleryAdmin = () => {
   const [fileSizes, setFileSizes] = useState<Record<string, number>>({});
   const [compressionProgress, setCompressionProgress] = useState<{ current: number; total: number } | null>(null);
   const [compressingProjectId, setCompressingProjectId] = useState<string | null>(null);
+  const [compressingImageId, setCompressingImageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -349,6 +350,46 @@ const DesignGalleryAdmin = () => {
     onError: (error: Error) => {
       setCompressionProgress(null);
       setCompressingProjectId(null);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const compressSingleMutation = useMutation({
+    mutationFn: async ({ projectId, imageId, imageType }: { projectId: string; imageId?: string; imageType: "main" | "sub" }) => {
+      const trackingId = imageType === "main" ? `main-${projectId}` : imageId!;
+      setCompressingImageId(trackingId);
+
+      const { data, error } = await supabase.functions.invoke("compress-gallery-images", {
+        body: {
+          mode: "compress",
+          projectId,
+          imageId: imageType === "sub" ? imageId : undefined,
+          imageType,
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setCompressingImageId(null);
+      queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery-project-images"] });
+      
+      if (data?.compressed) {
+        toast({
+          title: "Image compressed",
+          description: `Reduced from ${formatFileSize(data.originalSize)} to ${formatFileSize(data.newSize)}`,
+        });
+      } else {
+        toast({
+          title: "No compression needed",
+          description: "Image is already under 512KB",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      setCompressingImageId(null);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -751,12 +792,40 @@ const DesignGalleryAdmin = () => {
               
               <div className="space-y-6">
                 {/* Main Image Preview */}
-                <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/50">
-                  <img
-                    src={project.main_image_url}
-                    alt={project.title || "Project"}
-                    className="w-full h-full object-contain"
-                  />
+                <div className="space-y-2">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/50 relative">
+                    <img
+                      src={project.main_image_url}
+                      alt={project.title || "Project"}
+                      className="w-full h-full object-contain"
+                    />
+                    {compressingImageId === `main-${project.id}` && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="flex items-center gap-2 text-white">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm font-medium">Compressing...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {fileSizes[project.id] ? formatFileSize(fileSizes[project.id]) : "Loading size..."}
+                      {fileSizes[project.id] && fileSizes[project.id] > 512 * 1024 && (
+                        <span className="text-red-500 ml-1">(over 512KB)</span>
+                      )}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-lg gap-1.5"
+                      disabled={compressingImageId === `main-${project.id}` || compressSingleMutation.isPending}
+                      onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageType: "main" })}
+                    >
+                      <Minimize2 className="w-3 h-3" />
+                      Compress
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Title & Description */}
@@ -821,21 +890,37 @@ const DesignGalleryAdmin = () => {
                   <div className="grid grid-cols-3 gap-3">
                     {projectImages?.map((img) => (
                       <div key={img.id} className="relative group/img">
-                        <div className="aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/50">
+                        <div className="aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/50 relative">
                           <img
                             src={img.image_url}
                             alt=""
                             className="w-full h-full object-cover"
                           />
+                          {compressingImageId === img.id && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            </div>
+                          )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-2 right-2 w-7 h-7 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity"
-                          onClick={() => deleteSubImageMutation.mutate(img.id)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-background"
+                            disabled={compressingImageId === img.id || compressSingleMutation.isPending}
+                            onClick={() => compressSingleMutation.mutate({ projectId: project.id, imageId: img.id, imageType: "sub" })}
+                          >
+                            <Minimize2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="w-7 h-7 rounded-lg"
+                            onClick={() => deleteSubImageMutation.mutate(img.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
