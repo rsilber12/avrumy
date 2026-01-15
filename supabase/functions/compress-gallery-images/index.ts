@@ -165,41 +165,59 @@ Deno.serve(async (req) => {
 
       const imagesToCompress: { id: string; projectId: string; type: "main" | "sub"; url: string; displayOrder: number }[] = [];
 
-      // Check main images (already ordered by display_order)
-      for (const project of projects || []) {
-        try {
-          const response = await fetch(project.main_image_url, { method: "HEAD" });
-          const contentLength = response.headers.get("content-length");
-          if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ 
-              id: project.id, 
-              projectId: project.id, 
-              type: "main", 
-              url: project.main_image_url,
-              displayOrder: project.display_order ?? 0
-            });
+      // Check main images in parallel for speed
+      const mainImageChecks = await Promise.allSettled(
+        (projects || []).map(async (project) => {
+          try {
+            const response = await fetch(project.main_image_url, { method: "HEAD" });
+            const contentLength = response.headers.get("content-length");
+            if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
+              return { 
+                id: project.id, 
+                projectId: project.id, 
+                type: "main" as const, 
+                url: project.main_image_url,
+                displayOrder: project.display_order ?? 0
+              };
+            }
+          } catch {
+            // Skip if can't check
           }
-        } catch {
-          // Skip if can't check
+          return null;
+        })
+      );
+
+      // Check sub images in parallel
+      const subImageChecks = await Promise.allSettled(
+        (projectImages || []).map(async (image) => {
+          try {
+            const response = await fetch(image.image_url, { method: "HEAD" });
+            const contentLength = response.headers.get("content-length");
+            if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
+              return { 
+                id: image.id, 
+                projectId: image.project_id, 
+                type: "sub" as const, 
+                url: image.image_url,
+                displayOrder: image.display_order ?? 0
+              };
+            }
+          } catch {
+            // Skip if can't check
+          }
+          return null;
+        })
+      );
+
+      // Collect successful results
+      for (const result of mainImageChecks) {
+        if (result.status === "fulfilled" && result.value) {
+          imagesToCompress.push(result.value);
         }
       }
-
-      // Check sub images
-      for (const image of projectImages || []) {
-        try {
-          const response = await fetch(image.image_url, { method: "HEAD" });
-          const contentLength = response.headers.get("content-length");
-          if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ 
-              id: image.id, 
-              projectId: image.project_id, 
-              type: "sub", 
-              url: image.image_url,
-              displayOrder: image.display_order ?? 0
-            });
-          }
-        } catch {
-          // Skip if can't check
+      for (const result of subImageChecks) {
+        if (result.status === "fulfilled" && result.value) {
+          imagesToCompress.push(result.value);
         }
       }
 
