@@ -159,9 +159,9 @@ Deno.serve(async (req) => {
 
       const { data: projectImages } = await supabase
         .from("gallery_project_images")
-        .select("id, image_url");
+        .select("id, image_url, project_id");
 
-      const imagesToCompress: { id: string; type: "main" | "sub"; url: string }[] = [];
+      const imagesToCompress: { id: string; projectId: string; type: "main" | "sub"; url: string }[] = [];
 
       // Check main images
       for (const project of projects || []) {
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
           const response = await fetch(project.main_image_url, { method: "HEAD" });
           const contentLength = response.headers.get("content-length");
           if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ id: project.id, type: "main", url: project.main_image_url });
+            imagesToCompress.push({ id: project.id, projectId: project.id, type: "main", url: project.main_image_url });
           }
         } catch {
           // Skip if can't check
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
           const response = await fetch(image.image_url, { method: "HEAD" });
           const contentLength = response.headers.get("content-length");
           if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
-            imagesToCompress.push({ id: image.id, type: "sub", url: image.image_url });
+            imagesToCompress.push({ id: image.id, projectId: image.project_id, type: "sub", url: image.image_url });
           }
         } catch {
           // Skip if can't check

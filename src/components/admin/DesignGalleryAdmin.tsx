@@ -37,6 +37,7 @@ const DesignGalleryAdmin = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [fileSizes, setFileSizes] = useState<Record<string, number>>({});
   const [compressionProgress, setCompressionProgress] = useState<{ current: number; total: number } | null>(null);
+  const [compressingProjectId, setCompressingProjectId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subImagesInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -288,7 +289,7 @@ const DesignGalleryAdmin = () => {
       });
       if (listError) throw listError;
 
-      const images = listData.images as { id: string; type: "main" | "sub"; url: string }[];
+      const images = listData.images as { id: string; projectId: string; type: "main" | "sub"; url: string }[];
       
       if (images.length === 0) {
         return { compressed: 0, total: 0 };
@@ -301,12 +302,13 @@ const DesignGalleryAdmin = () => {
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         setCompressionProgress({ current: i + 1, total: images.length });
+        setCompressingProjectId(img.projectId);
 
         try {
           const { data, error } = await supabase.functions.invoke("compress-gallery-images", {
             body: {
               mode: "compress",
-              projectId: img.id,
+              projectId: img.projectId,
               imageId: img.type === "sub" ? img.id : undefined,
               imageType: img.type,
             },
@@ -314,16 +316,27 @@ const DesignGalleryAdmin = () => {
 
           if (!error && data?.compressed) {
             compressed++;
+            // Refresh file sizes and data after each successful compression
+            queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
+            // Update file size for the compressed project
+            if (data.newSize) {
+              setFileSizes(prev => ({
+                ...prev,
+                [img.projectId]: data.newSize
+              }));
+            }
           }
         } catch {
           // Continue with next image
         }
       }
 
+      setCompressingProjectId(null);
       return { compressed, total: images.length };
     },
     onSuccess: (data) => {
       setCompressionProgress(null);
+      setCompressingProjectId(null);
       queryClient.invalidateQueries({ queryKey: ["gallery-projects"] });
       queryClient.invalidateQueries({ queryKey: ["gallery-project-images"] });
       toast({
@@ -335,6 +348,7 @@ const DesignGalleryAdmin = () => {
     },
     onError: (error: Error) => {
       setCompressionProgress(null);
+      setCompressingProjectId(null);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -653,12 +667,26 @@ const DesignGalleryAdmin = () => {
                   }`}
                   onClick={() => toggleSelect(project.id)}
                 >
-                  <div className="aspect-square overflow-hidden">
+                  <div className="aspect-square overflow-hidden relative">
                     <img
                       src={project.main_image_url}
                       alt={project.title || "Project"}
                       className="w-full h-full object-cover"
                     />
+                    {/* Compression progress overlay for select mode */}
+                    {compressingProjectId === project.id && compressionProgress && (
+                      <div className="absolute inset-0 bg-black/40 flex items-end">
+                        <div className="w-full p-2">
+                          <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-red-500 transition-all duration-300 rounded-full animate-pulse"
+                              style={{ width: '100%' }}
+                            />
+                          </div>
+                          <p className="text-white text-xs text-center mt-1 font-medium">Compressing...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="p-4 flex items-center justify-between">
                     <p className="text-sm truncate font-medium flex-1">
@@ -681,12 +709,26 @@ const DesignGalleryAdmin = () => {
                       setEditDescription(project.description || "");
                     }}
                   >
-                    <div className="aspect-square overflow-hidden">
+                    <div className="aspect-square overflow-hidden relative">
                       <img
                         src={project.main_image_url}
                         alt={project.title || "Project"}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
+                      {/* Compression progress overlay */}
+                      {compressingProjectId === project.id && compressionProgress && (
+                        <div className="absolute inset-0 bg-black/40 flex items-end">
+                          <div className="w-full p-2">
+                            <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-red-500 transition-all duration-300 rounded-full animate-pulse"
+                                style={{ width: '100%' }}
+                              />
+                            </div>
+                            <p className="text-white text-xs text-center mt-1 font-medium">Compressing...</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="p-4 flex items-center justify-between">
                       <p className="text-sm truncate font-medium flex-1">
