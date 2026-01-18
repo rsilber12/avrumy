@@ -408,9 +408,9 @@ const MusicArtworkAdmin = () => {
                 />
               </div>
             )}
-            {/* Reorder buttons */}
+            {/* Reorder buttons - moved to right side */}
             {!isSelectMode && (
-              <div className="absolute left-3 top-4 md:top-1/2 md:-translate-y-1/2 flex flex-col gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute right-3 top-4 md:top-1/2 md:-translate-y-1/2 flex flex-col gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -431,7 +431,7 @@ const MusicArtworkAdmin = () => {
                 </Button>
               </div>
             )}
-            <div className="p-4 pl-14 md:p-5 md:pl-14">
+            <div className={`p-4 pr-14 md:p-5 md:pr-14 ${isSelectMode ? 'pl-14' : ''}`}>
               <div className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center">
                 <div className="w-full md:w-32 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
                   <img
