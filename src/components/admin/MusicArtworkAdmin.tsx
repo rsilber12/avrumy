@@ -401,7 +401,7 @@ const MusicArtworkAdmin = () => {
           >
             {/* Select checkbox */}
             {isSelectMode && (
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+              <div className="absolute left-3 top-4 md:top-1/2 md:-translate-y-1/2 z-10">
                 <Checkbox
                   checked={selectedIds.has(artwork.id)}
                   className="w-5 h-5 rounded-md"
@@ -410,7 +410,7 @@ const MusicArtworkAdmin = () => {
             )}
             {/* Reorder buttons */}
             {!isSelectMode && (
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute left-3 top-4 md:top-1/2 md:-translate-y-1/2 flex flex-col gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -431,16 +431,16 @@ const MusicArtworkAdmin = () => {
                 </Button>
               </div>
             )}
-            <div className="p-5 pl-14">
-              <div className="flex gap-4">
-                <div className="w-32 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
+            <div className="p-4 pl-14 md:p-5 md:pl-14">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center">
+                <div className="w-full md:w-32 aspect-video bg-muted rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-border/50">
                   <img
                     src={artwork.thumbnail_url}
                     alt={artwork.title}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex-1 min-w-0 py-1">
+                <div className="flex-1 min-w-0">
                   {editingId === artwork.id && !isSelectMode ? (
                     <div className="flex gap-2 items-center">
                       <Input
@@ -468,12 +468,12 @@ const MusicArtworkAdmin = () => {
                   ) : (
                     <p className="font-medium truncate text-sm">{artwork.title}</p>
                   )}
-                  <p className="text-xs text-muted-foreground truncate mt-1.5">
+                  <p className="text-xs text-muted-foreground break-all md:truncate mt-1.5">
                     {artwork.youtube_url}
                   </p>
                 </div>
                 {!isSelectMode && (
-                  <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 flex-shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity mt-2 md:mt-0">
                     <Button
                       size="icon"
                       variant="ghost"
