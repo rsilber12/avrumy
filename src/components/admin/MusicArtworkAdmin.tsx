@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Loader2, Plus, Pencil, X, Check, ChevronUp, ChevronDown, Shuffle, CheckSquare } from "lucide-react";
+import { Trash2, Loader2, Plus, Pencil, X, Check, ChevronUp, ChevronDown, Shuffle, CheckSquare, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface MusicArtwork {
@@ -25,6 +25,9 @@ const MusicArtworkAdmin = () => {
   const [editTitle, setEditTitle] = useState("");
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingUploadId, setPendingUploadId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -222,6 +225,58 @@ const MusicArtworkAdmin = () => {
     },
   });
 
+  const uploadThumbnailMutation = useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      setUploadingId(id);
+      
+      const fileExt = file.name.split(".").pop();
+      const fileName = `music-thumbnails/${id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("gallery")
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from("gallery")
+        .getPublicUrl(fileName);
+      
+      const { error: updateError } = await supabase
+        .from("music_artworks")
+        .update({ thumbnail_url: publicUrl })
+        .eq("id", id);
+      
+      if (updateError) throw updateError;
+      
+      return publicUrl;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["music-artworks"] });
+      toast({ title: "Thumbnail uploaded" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      setUploadingId(null);
+      setPendingUploadId(null);
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && pendingUploadId) {
+      uploadThumbnailMutation.mutate({ id: pendingUploadId, file });
+    }
+    e.target.value = "";
+  };
+
+  const triggerFileUpload = (id: string) => {
+    setPendingUploadId(id);
+    fileInputRef.current?.click();
+  };
+
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
@@ -243,6 +298,15 @@ const MusicArtworkAdmin = () => {
 
   return (
     <div className="space-y-6 font-sans">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      
       {/* Artwork Count */}
       <div className="text-sm text-muted-foreground">
         {artworks?.length || 0} artwork{(artworks?.length || 0) !== 1 ? "s" : ""} added
@@ -410,6 +474,19 @@ const MusicArtworkAdmin = () => {
                 </div>
                 {!isSelectMode && (
                   <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 rounded-lg hover:bg-muted"
+                      onClick={() => triggerFileUpload(artwork.id)}
+                      disabled={uploadingId === artwork.id}
+                    >
+                      {uploadingId === artwork.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"
