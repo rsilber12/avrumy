@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -56,11 +55,16 @@ const Goals = () => {
     if (!goal) return;
 
     const newChecked = !goal.checked;
+    // If checking and no date set, set today's date
+    const newDate = newChecked && !goal.target_date 
+      ? format(new Date(), "yyyy-MM-dd") 
+      : goal.target_date;
+    
     setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, checked: newChecked } : g))
+      prev.map((g) => (g.id === goalId ? { ...g, checked: newChecked, target_date: newDate } : g))
     );
 
-    await supabase.from("goals").update({ checked: newChecked }).eq("id", goalId);
+    await supabase.from("goals").update({ checked: newChecked, target_date: newDate }).eq("id", goalId);
   };
 
   const setGoalDate = async (goalId: number, date: Date | undefined) => {
@@ -73,7 +77,7 @@ const Goals = () => {
   };
 
   const completedCount = goals.filter((g) => g.checked).length;
-  const progressPercent = (completedCount / 500) * 100;
+  const progressPercent = Math.round((completedCount / 500) * 100);
 
   if (loading) {
     return (
@@ -85,56 +89,68 @@ const Goals = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-3 py-6">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Header with centered logo */}
+        <div className="flex justify-center py-4">
           <img
             src="/favicon.png"
             alt="Logo"
-            className="w-6 h-6"
+            className="w-10 h-10"
           />
-          <h1 className="text-3xl font-bold">
-            2026 <span className="text-primary">Goals</span>
-          </h1>
         </div>
 
         {/* Progress Section */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center justify-between">
-              <span>Progress</span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {completedCount}/500 Goals
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Progress value={progressPercent} className="h-3" />
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex items-start justify-between mb-3">
+              <h2 className="text-lg font-semibold text-foreground">Goals Achieved</h2>
+              <div className="text-right">
+                <span className="text-3xl md:text-4xl font-bold text-primary">{progressPercent}%</span>
+                <span className="text-muted-foreground ml-2">({completedCount}/500)</span>
+              </div>
+            </div>
+            
+            {/* Progress bar with markers */}
+            <div className="relative">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span>100%</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Notes Section */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 md:p-6">
             <Textarea
               placeholder="Write your notes here..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[100px] resize-none"
+              className="min-h-[100px] resize-none bg-transparent border-none p-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
             />
           </CardContent>
         </Card>
 
         {/* Goals Grid */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Goals</CardTitle>
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2 px-4 md:px-6">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Your Goals</CardTitle>
+              <span className="text-sm text-muted-foreground">Click to check/uncheck</span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-20 lg:grid-cols-25 gap-1">
+          <CardContent className="px-4 md:px-6 pb-4">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
               {goals.map((goal) => (
                 <GoalBox
                   key={goal.id}
@@ -165,6 +181,8 @@ const GoalBox = ({ goal, onToggle, onDateChange }: GoalBoxProps) => {
     : undefined;
   const validDate = parsedDate && isValid(parsedDate) ? parsedDate : undefined;
 
+  const displayDate = validDate ? format(validDate, "MM/dd") : "--/--";
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -179,27 +197,28 @@ const GoalBox = ({ goal, onToggle, onDateChange }: GoalBoxProps) => {
             setOpen(true);
           }}
           className={cn(
-            "relative aspect-square rounded-md text-[10px] font-medium flex flex-col items-center justify-center gap-0.5 transition-all",
-            "hover:ring-2 hover:ring-primary/50",
+            "relative aspect-square rounded-lg flex flex-col items-center justify-center gap-1 transition-all border-2",
             goal.checked
-              ? "bg-green-600 text-white"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
+              ? "bg-primary/20 border-primary/50 text-primary"
+              : "bg-muted/50 border-muted-foreground/20 text-muted-foreground"
           )}
         >
-          {goal.checked ? (
-            <Check className="w-3 h-3" />
-          ) : (
-            <span>{goal.id}</span>
-          )}
-          {goal.target_date && (
-            <span className="text-[7px] opacity-75">
-              {format(validDate!, "M/d")}
-            </span>
-          )}
+          {/* Checkbox icon */}
+          <div className={cn(
+            "w-6 h-6 rounded-md flex items-center justify-center border-2 transition-all",
+            goal.checked
+              ? "bg-primary border-primary"
+              : "bg-transparent border-muted-foreground/40"
+          )}>
+            {goal.checked && <Check className="w-4 h-4 text-primary-foreground" />}
+          </div>
+          
+          {/* Date display */}
+          <span className="text-[10px] font-medium">{displayDate}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <div className="p-2 border-b">
+        <div className="p-3 border-b">
           <span className="text-sm font-medium">Goal #{goal.id}</span>
         </div>
         <Calendar
@@ -210,6 +229,7 @@ const GoalBox = ({ goal, onToggle, onDateChange }: GoalBoxProps) => {
             setOpen(false);
           }}
           initialFocus
+          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
