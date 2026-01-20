@@ -79,13 +79,6 @@ const Goals = () => {
   const completedCount = goals.filter((g) => g.checked).length;
   const progressPercent = Math.round((completedCount / 500) * 100);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
