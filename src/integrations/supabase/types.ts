@@ -94,6 +94,30 @@ export type Database = {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          checked: boolean
+          created_at: string
+          id: number
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          checked?: boolean
+          created_at?: string
+          id: number
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          checked?: boolean
+          created_at?: string
+          id?: number
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       music_artworks: {
         Row: {
           created_at: string
@@ -124,6 +148,24 @@ export type Database = {
           updated_at?: string
           youtube_url?: string
           youtube_video_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: number
+          updated_at?: string
         }
         Relationships: []
       }
