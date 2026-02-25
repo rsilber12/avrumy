@@ -76,9 +76,9 @@ const DesignGallery = () => {
               </div>
             ))}
           </Masonry>
-        ) : !isLoading ? (
+        ) : (
           <p className="text-center text-muted-foreground">No projects added yet</p>
-        ) : null}
+        )}
       </div>
 
       {/* Footer */}

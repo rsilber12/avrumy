@@ -54,16 +54,7 @@ const Websites = () => {
 
       {/* Gallery Grid */}
       <div className="max-w-6xl mx-auto">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item}>
-                <div className="aspect-video bg-secondary rounded-xl animate-pulse" />
-                <div className="h-4 bg-secondary rounded mt-4 w-3/4 animate-pulse" />
-              </div>
-            ))}
-          </div>
-        ) : websites && websites.length > 0 ? (
+        {websites && websites.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {websites.map((website, index) => (
               <ScrollReveal
