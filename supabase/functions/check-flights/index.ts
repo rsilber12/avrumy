@@ -10,10 +10,10 @@ type AdsbAircraft = {
   lon?: number;
 };
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 async function fetchAircraft(reg: string): Promise<AdsbAircraft | null> {
   try {
@@ -49,26 +49,20 @@ async function sendTelegram(chatId: string, text: string) {
   }
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  if (!lovableKey || !resendKey) {
-    console.log("Email skipped — RESEND_API_KEY not configured");
-    return;
-  }
+async function sendEmail(to: string, subject: string, message: string) {
   try {
-    const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": resendKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: serviceRoleKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Flight Tracker <onboarding@resend.dev>",
-        to: [to],
-        subject,
-        html,
+        templateName: "flight-alert",
+        recipientEmail: to,
+        idempotencyKey: `flight-alert-${to}-${Date.now()}`,
+        templateData: { subject, message },
       }),
     });
     if (!res.ok) console.error("Email send failed", res.status, await res.text());
@@ -153,7 +147,7 @@ Deno.serve(async (req) => {
         message: plain,
       });
       for (const cid of telegrams) await sendTelegram(cid, a.message);
-      for (const em of emails) await sendEmail(em, `Flight alert: ${reg} ${a.kind}`, `<p>${a.message}</p>`);
+      for (const em of emails) await sendEmail(em, `Flight alert: ${reg} ${a.kind}`, plain);
     }
 
     results.push({ reg, seen: true, onGround, altitude, alerts: alerts.length });
