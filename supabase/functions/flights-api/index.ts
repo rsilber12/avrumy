@@ -133,8 +133,7 @@ Deno.serve(async (req) => {
     const tg = (recipients ?? []).filter((r) => r.kind === "telegram");
     const em = (recipients ?? []).filter((r) => r.kind === "email");
     const subject = "Flight Tracker — test alert";
-    const html = `<p>🧪 <b>Test alert</b> from your Flight Tracker. If you see this, delivery is working.</p>`;
-    const text = `🧪 <b>Test alert</b> from your Flight Tracker. If you see this, delivery is working.`;
+    const text = `🧪 Test alert from your Flight Tracker. If you see this, delivery is working.`;
     const results = {
       telegram: [] as Array<{ value: string; ok: boolean; error: string | null }>,
       email: [] as Array<{ value: string; ok: boolean; error: string | null }>,
