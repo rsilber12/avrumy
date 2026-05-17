@@ -106,6 +106,7 @@ async function sendEmail(to: string, subject: string, message: string) {
       headers: {
         Authorization: `Bearer ${functionInvokeKey}`,
         apikey: functionInvokeKey,
+        "x-internal-function-key": serviceRoleKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

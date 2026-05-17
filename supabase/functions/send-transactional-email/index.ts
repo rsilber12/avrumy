@@ -49,6 +49,26 @@ Deno.serve(async (req) => {
     )
   }
 
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const bearerToken = authHeader.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length).trim()
+    : ''
+  const internalFunctionKey = req.headers.get('x-internal-function-key') ?? ''
+
+  if (internalFunctionKey !== supabaseServiceKey && bearerToken !== supabaseServiceKey) {
+    console.error('Unauthorized transactional email request', {
+      hasAuthorization: Boolean(authHeader),
+      hasInternalFunctionKey: Boolean(internalFunctionKey),
+    })
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
   // Parse request body
   let templateName: string
   let recipientEmail: string
