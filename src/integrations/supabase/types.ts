@@ -289,6 +289,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tracked_flights: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          registration: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          registration: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          registration?: string
+        }
+        Relationships: []
+      }
       websites: {
         Row: {
           created_at: string

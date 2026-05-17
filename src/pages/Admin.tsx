@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BarChart3, Layout, Globe, Music, Users } from "lucide-react";
+import { ArrowLeft, BarChart3, Layout, Globe, Music, Users, Plane } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MusicArtworkAdmin from "@/components/admin/MusicArtworkAdmin";
 import DesignGalleryAdmin from "@/components/admin/DesignGalleryAdmin";
 import WebsitesAdmin from "@/components/admin/WebsitesAdmin";
 import UsersAdmin from "@/components/admin/UsersAdmin";
 import AnalyticsAdmin from "@/components/admin/AnalyticsAdmin";
+import FlightsAdmin from "@/components/admin/FlightsAdmin";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -68,7 +69,7 @@ const Admin = () => {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 gap-1 bg-muted/50 p-1 rounded-2xl backdrop-blur-sm border border-border/50 mb-8 h-auto">
+          <TabsList className="w-full grid grid-cols-6 gap-1 bg-muted/50 p-1 rounded-2xl backdrop-blur-sm border border-border/50 mb-8 h-auto">
             <TabsTrigger 
               value="analytics" 
               className="flex items-center gap-2 py-3 px-4 rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-primary/5 transition-all duration-300"
@@ -98,6 +99,13 @@ const Admin = () => {
               <span className="hidden sm:inline text-sm">Music</span>
             </TabsTrigger>
             <TabsTrigger 
+              value="flights" 
+              className="flex items-center gap-2 py-3 px-4 rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-primary/5 transition-all duration-300"
+            >
+              <Plane className="w-4 h-4" />
+              <span className="hidden sm:inline text-sm">Flights</span>
+            </TabsTrigger>
+            <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 py-3 px-4 rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-primary/5 transition-all duration-300"
             >
@@ -121,6 +129,10 @@ const Admin = () => {
 
             <TabsContent value="music" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
               <MusicArtworkAdmin />
+            </TabsContent>
+
+            <TabsContent value="flights" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+              <FlightsAdmin />
             </TabsContent>
 
             <TabsContent value="users" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
