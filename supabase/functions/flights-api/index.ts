@@ -49,12 +49,12 @@ async function sendEmail(to: string, subject: string, message: string) {
         apikey: serviceRoleKey,
         "Content-Type": "application/json",
       },
-      body: {
+      body: JSON.stringify({
         templateName: "flight-alert",
         recipientEmail: to,
         idempotencyKey: `flight-alert-${to}-${Date.now()}`,
         templateData: { subject, message },
-      },
+      }),
     });
     if (!res.ok) return { ok: false, error: await res.text() };
     return { ok: true, error: null };
