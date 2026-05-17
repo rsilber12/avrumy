@@ -5,10 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -42,7 +42,13 @@ async function sendTelegram(chatId: string, text: string) {
 
 async function sendEmail(to: string, subject: string, message: string) {
   try {
-    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: serviceRoleKey,
+        "Content-Type": "application/json",
+      },
       body: {
         templateName: "flight-alert",
         recipientEmail: to,
@@ -50,7 +56,7 @@ async function sendEmail(to: string, subject: string, message: string) {
         templateData: { subject, message },
       },
     });
-    if (error) return { ok: false, error: error.message ?? String(error) };
+    if (!res.ok) return { ok: false, error: await res.text() };
     return { ok: true, error: null };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
