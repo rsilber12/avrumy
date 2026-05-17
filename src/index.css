@@ -148,33 +148,196 @@
   }
 }
 
-/* Scoped Flight Tracker theme — matches Flight Alert Watcher project (shadcn slate) */
+/* ============================================================
+   Scoped Flight Tracker theme — premium dark cockpit aesthetic
+   ============================================================ */
 .flight-tracker-theme {
-  --background: 0 0% 100%;
-  --foreground: 224 39% 13%;
-  --card: 0 0% 100%;
-  --card-foreground: 224 39% 13%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 224 39% 13%;
-  --primary: 224 31% 21%;
-  --primary-foreground: 220 14% 98%;
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 224 31% 21%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 220 14% 96%;
-  --accent-foreground: 224 31% 21%;
+  --background: 222 47% 5%;
+  --foreground: 210 40% 96%;
+  --card: 222 40% 8%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 40% 8%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 199 89% 60%;
+  --primary-foreground: 222 47% 5%;
+  --secondary: 220 25% 14%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 220 25% 12%;
+  --muted-foreground: 215 20% 60%;
+  --accent: 199 89% 60%;
+  --accent-foreground: 222 47% 5%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 220 14% 98%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 220 9% 65%;
-  --radius: 0.625rem;
+  --destructive-foreground: 210 40% 96%;
+  --border: 220 25% 16%;
+  --input: 220 25% 14%;
+  --ring: 199 89% 60%;
+  --radius: 0.75rem;
+
+  --ft-accent: 199 89% 60%;
+  --ft-accent-2: 271 91% 68%;
+  --ft-success: 142 71% 50%;
+  --ft-danger: 0 84% 60%;
+
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  letter-spacing: -0.01em;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  position: relative;
+  isolation: isolate;
 }
-.flight-tracker-theme * { font-family: inherit; }
+.flight-tracker-theme *,
+.flight-tracker-theme button,
+.flight-tracker-theme input,
+.flight-tracker-theme select { font-family: inherit; }
 .flight-tracker-theme .font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-feature-settings: 'zero', 'ss01';
 }
+
+.flight-tracker-theme .ft-backdrop {
+  position: absolute; inset: 0; z-index: -1; overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 0%, hsl(var(--ft-accent) / 0.18), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 10%, hsl(var(--ft-accent-2) / 0.14), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 110%, hsl(var(--ft-accent) / 0.10), transparent 60%);
+}
+.flight-tracker-theme .ft-backdrop::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(hsl(var(--foreground) / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 30%, transparent 80%);
+}
+.flight-tracker-theme .ft-backdrop::after {
+  content: ''; position: absolute; inset: -2px;
+  background: radial-gradient(circle at 50% 0%, hsl(var(--ft-accent) / 0.12), transparent 50%);
+  filter: blur(40px);
+  animation: ft-pulse-bg 8s ease-in-out infinite;
+}
+
+.flight-tracker-theme .ft-glass {
+  background: linear-gradient(180deg, hsl(220 25% 10% / 0.7), hsl(222 40% 6% / 0.85));
+  border: 1px solid hsl(var(--border));
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.06),
+    0 30px 60px -30px hsl(222 47% 0% / 0.6);
+}
+.flight-tracker-theme .ft-glass-hover { transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .35s, box-shadow .35s; }
+.flight-tracker-theme .ft-glass-hover:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--ft-accent) / 0.4);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.08),
+    0 0 0 1px hsl(var(--ft-accent) / 0.15),
+    0 40px 80px -30px hsl(var(--ft-accent) / 0.25);
+}
+
+.flight-tracker-theme .ft-pulse {
+  position: relative; width: 8px; height: 8px; border-radius: 999px;
+  background: hsl(var(--ft-success));
+  box-shadow: 0 0 12px hsl(var(--ft-success) / 0.8);
+}
+.flight-tracker-theme .ft-pulse::after {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: 999px; border: 1px solid hsl(var(--ft-success) / 0.5);
+  animation: ft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.flight-tracker-theme .ft-pulse.ft-pulse-muted { background: hsl(var(--muted-foreground)); box-shadow: none; }
+.flight-tracker-theme .ft-pulse.ft-pulse-muted::after { display: none; }
+
+.flight-tracker-theme .ft-rule {
+  height: 1px; flex: 1;
+  background: linear-gradient(90deg, hsl(var(--border)), transparent);
+}
+
+.flight-tracker-theme .ft-gradient-text {
+  background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--ft-accent)));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.flight-tracker-theme .ft-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  background: hsl(var(--muted) / 0.6);
+  border: 1px solid hsl(var(--border));
+  font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.flight-tracker-theme .ft-cta {
+  position: relative;
+  background: linear-gradient(135deg, hsl(var(--ft-accent)), hsl(var(--ft-accent-2)));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  transition: transform .2s ease, box-shadow .3s ease;
+  box-shadow: 0 8px 24px -8px hsl(var(--ft-accent) / 0.6);
+}
+.flight-tracker-theme .ft-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px -8px hsl(var(--ft-accent) / 0.8);
+}
+
+.flight-tracker-theme .ft-flight-card { position: relative; overflow: hidden; }
+.flight-tracker-theme .ft-flight-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 0%), hsl(var(--ft-accent) / 0.10), transparent 40%);
+  opacity: 0; transition: opacity .4s ease; pointer-events: none;
+}
+.flight-tracker-theme .ft-flight-card:hover::before { opacity: 1; }
+
+.flight-tracker-theme .ft-badge-air {
+  background: hsl(var(--ft-success) / 0.15);
+  color: hsl(var(--ft-success));
+  border: 1px solid hsl(var(--ft-success) / 0.3);
+}
+.flight-tracker-theme .ft-badge-ground {
+  background: hsl(var(--muted) / 0.6);
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+}
+.flight-tracker-theme .ft-badge-offline {
+  background: hsl(var(--muted) / 0.4);
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+.flight-tracker-theme .ft-tile {
+  padding: 14px; border-radius: 12px;
+  background: hsl(var(--muted) / 0.4);
+  border: 1px solid hsl(var(--border));
+  transition: background .2s, border-color .2s;
+}
+.flight-tracker-theme .ft-tile:hover {
+  background: hsl(var(--muted) / 0.6);
+  border-color: hsl(var(--ft-accent) / 0.3);
+}
+
+.flight-tracker-theme .ft-in { animation: ft-in .6s cubic-bezier(.2,.8,.2,1) both; }
+.flight-tracker-theme .ft-in-d1 { animation-delay: .05s; }
+.flight-tracker-theme .ft-in-d2 { animation-delay: .12s; }
+.flight-tracker-theme .ft-in-d3 { animation-delay: .2s; }
+
+@keyframes ft-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ft-ping {
+  0%   { transform: scale(1); opacity: 0.8; }
+  80%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes ft-pulse-bg {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flight-tracker-theme .ft-pulse::after,
+  .flight-tracker-theme .ft-backdrop::after,
+  .flight-tracker-theme .ft-in { animation: none !important; }
+}
+
