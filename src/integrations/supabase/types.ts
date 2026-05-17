@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      aircraft_state: {
+        Row: {
+          altitude: number | null
+          flight: string | null
+          ground_speed: number | null
+          hex: string | null
+          last_checked: string
+          last_seen: string | null
+          lat: number | null
+          lon: number | null
+          on_ground: boolean | null
+          raw: Json | null
+          registration: string
+        }
+        Insert: {
+          altitude?: number | null
+          flight?: string | null
+          ground_speed?: number | null
+          hex?: string | null
+          last_checked?: string
+          last_seen?: string | null
+          lat?: number | null
+          lon?: number | null
+          on_ground?: boolean | null
+          raw?: Json | null
+          registration: string
+        }
+        Update: {
+          altitude?: number | null
+          flight?: string | null
+          ground_speed?: number | null
+          hex?: string | null
+          last_checked?: string
+          last_seen?: string | null
+          lat?: number | null
+          lon?: number | null
+          on_ground?: boolean | null
+          raw?: Json | null
+          registration?: string
+        }
+        Relationships: []
+      }
+      alert_log: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          registration: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          registration: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          registration?: string
+        }
+        Relationships: []
+      }
+      alert_recipients: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          label: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          label?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       email_clicks: {
         Row: {
           created_at: string
