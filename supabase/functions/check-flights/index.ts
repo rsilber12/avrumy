@@ -12,7 +12,8 @@ type AdsbAircraft = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const functionInvokeKey = Deno.env.get("SUPABASE_ANON_KEY") ?? serviceRoleKey;
+const functionInvokeKey =
+  Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? serviceRoleKey;
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -57,6 +58,7 @@ async function sendEmail(to: string, subject: string, message: string) {
       headers: {
         Authorization: `Bearer ${functionInvokeKey}`,
         apikey: functionInvokeKey,
+        "x-internal-function-key": serviceRoleKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

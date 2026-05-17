@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const functionInvokeKey = Deno.env.get("SUPABASE_ANON_KEY") ?? serviceRoleKey;
+const functionInvokeKey =
+  Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? serviceRoleKey;
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -105,6 +106,7 @@ async function sendEmail(to: string, subject: string, message: string) {
       headers: {
         Authorization: `Bearer ${functionInvokeKey}`,
         apikey: functionInvokeKey,
+        "x-internal-function-key": serviceRoleKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -114,7 +116,7 @@ async function sendEmail(to: string, subject: string, message: string) {
         templateData: { subject, message },
       }),
     });
-    if (!res.ok) return { ok: false, error: await res.text() };
+    if (!res.ok) return { ok: false, error: `Email sender ${res.status}: ${await res.text()}` };
     return { ok: true, error: null };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
