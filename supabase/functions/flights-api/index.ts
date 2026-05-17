@@ -40,25 +40,21 @@ async function sendTelegram(chatId: string, text: string) {
   return { ok: res.ok, error: res.ok ? null : await res.text() };
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  if (!lovableKey || !resendKey) return { ok: false, error: "resend not configured" };
-  const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": resendKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Flight Tracker <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-  return { ok: res.ok, error: res.ok ? null : await res.text() };
+async function sendEmail(to: string, subject: string, message: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "flight-alert",
+        recipientEmail: to,
+        idempotencyKey: `flight-alert-${to}-${Date.now()}`,
+        templateData: { subject, message },
+      },
+    });
+    if (error) return { ok: false, error: error.message ?? String(error) };
+    return { ok: true, error: null };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -137,8 +133,7 @@ Deno.serve(async (req) => {
     const tg = (recipients ?? []).filter((r) => r.kind === "telegram");
     const em = (recipients ?? []).filter((r) => r.kind === "email");
     const subject = "Flight Tracker — test alert";
-    const html = `<p>🧪 <b>Test alert</b> from your Flight Tracker. If you see this, delivery is working.</p>`;
-    const text = `🧪 <b>Test alert</b> from your Flight Tracker. If you see this, delivery is working.`;
+    const text = `🧪 Test alert from your Flight Tracker. If you see this, delivery is working.`;
     const results = {
       telegram: [] as Array<{ value: string; ok: boolean; error: string | null }>,
       email: [] as Array<{ value: string; ok: boolean; error: string | null }>,
@@ -148,7 +143,7 @@ Deno.serve(async (req) => {
       results.telegram.push({ value: r.value, ...out });
     }
     for (const r of em) {
-      const out = await sendEmail(r.value, subject, html);
+      const out = await sendEmail(r.value, subject, text);
       results.email.push({ value: r.value, ...out });
     }
     await supabase.from("alert_log").insert({
