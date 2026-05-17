@@ -217,7 +217,7 @@ const FlightsAdmin = () => {
     const failed = [...tg, ...em].filter((r: any) => !r.ok);
     if (failed.length === 0)
       toast.success(`Test sent to ${tg.length} Telegram + ${em.length} email recipient(s)`);
-    else toast.warning(`Sent with ${failed.length} failure(s) — check edge function logs`);
+    else toast.error(failed.map((r: any) => r.error || `${r.value} failed`).join(" · "));
   };
 
   const revokeSession = async (id: string) => {
