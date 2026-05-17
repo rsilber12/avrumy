@@ -206,6 +206,63 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_sessions: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          last_seen: string
+          region: string | null
+          revoked_at: string | null
+          token: string
+          user_agent: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          region?: string | null
+          revoked_at?: string | null
+          token: string
+          user_agent?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          last_seen?: string
+          region?: string | null
+          revoked_at?: string | null
+          token?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      flight_site_settings: {
+        Row: {
+          id: number
+          password_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          password_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          password_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gallery_project_images: {
         Row: {
           created_at: string
