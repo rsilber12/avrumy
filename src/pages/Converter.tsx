@@ -33,9 +33,10 @@ const Converter = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [converting, setConverting] = useState(false);
 
-  // Warm up wawoff2 WASM (Brotli decoder ~1MB) so first conversion isn't slow
+  // Preload the wawoff2 module (WASM init) without invoking decompress on empty input,
+  // which would abort the emscripten runtime and break future calls.
   useEffect(() => {
-    import("wawoff2").then((m: any) => m.default?.decompress?.(new Uint8Array())).catch(() => {});
+    import("wawoff2").catch(() => {});
   }, []);
 
   const addFiles = useCallback((files: FileList | File[]) => {
