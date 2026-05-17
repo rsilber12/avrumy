@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.create-admin-user]
 verify_jwt = false
+
+[functions.check-flights]
+verify_jwt = false
+
+[functions.flights-api]
+verify_jwt = false
