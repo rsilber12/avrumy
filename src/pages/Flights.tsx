@@ -366,6 +366,41 @@ function AircraftCard({
     !!data && !!data.last_seen && Date.now() - new Date(data.last_seen).getTime() < 15 * 60_000;
   const airborne = live && data?.on_ground === false;
 
+  const [place, setPlace] = useState<string | null>(null);
+  useEffect(() => {
+    if (data?.lat == null || data?.lon == null) {
+      setPlace(null);
+      return;
+    }
+    const lat = Number(data.lat).toFixed(2);
+    const lon = Number(data.lon).toFixed(2);
+    const cacheKey = `geo:${lat},${lon}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      setPlace(cached);
+      return;
+    }
+    let cancelled = false;
+    fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        const parts = [j.city || j.locality, j.principalSubdivision, j.countryName].filter(Boolean);
+        const seen = new Set<string>();
+        const text =
+          parts.filter((p: string) => (seen.has(p) ? false : (seen.add(p), true))).join(", ") ||
+          "Over open water";
+        sessionStorage.setItem(cacheKey, text);
+        setPlace(text);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.lat, data?.lon]);
+
   const onMove = (e: MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
     if (!el) return;
