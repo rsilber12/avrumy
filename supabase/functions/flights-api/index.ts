@@ -1,7 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-site-password",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-site-password, x-session-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -17,11 +18,67 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function checkPassword(req: Request): boolean {
-  const expected = Deno.env.get("SITE_PASSWORD");
-  if (!expected) return false;
-  const provided = req.headers.get("x-site-password");
-  return !!provided && provided === expected;
+async function sha256(s: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function getStoredPasswordHash(): Promise<string | null> {
+  const { data } = await supabase
+    .from("flight_site_settings")
+    .select("password_hash")
+    .eq("id", 1)
+    .maybeSingle();
+  return (data?.password_hash as string | null) ?? null;
+}
+
+async function verifyPassword(provided: string): Promise<boolean> {
+  if (!provided) return false;
+  const stored = await getStoredPasswordHash();
+  if (stored) return (await sha256(provided)) === stored;
+  const env = Deno.env.get("SITE_PASSWORD");
+  return !!env && provided === env;
+}
+
+function getIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? "";
+}
+
+async function geolocate(ip: string) {
+  if (!ip || ip === "127.0.0.1" || ip.startsWith("::")) return {};
+  try {
+    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    if (!res.ok) return {};
+    const j = await res.json();
+    return { country: j.country_name as string | undefined, city: j.city as string | undefined, region: j.region as string | undefined };
+  } catch {
+    return {};
+  }
+}
+
+async function authedSession(req: Request) {
+  // Returns the session row if both password + session token are valid; null otherwise.
+  const provided = req.headers.get("x-site-password") ?? "";
+  const token = req.headers.get("x-session-token") ?? "";
+  if (!(await verifyPassword(provided))) return null;
+  if (!token) return null;
+  const { data: session } = await supabase
+    .from("flight_sessions")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+  if (!session || session.revoked_at) return null;
+  // Touch last_seen (fire-and-forget)
+  supabase
+    .from("flight_sessions")
+    .update({ last_seen: new Date().toISOString() })
+    .eq("id", session.id)
+    .then(() => {});
+  return session;
 }
 
 async function sendTelegram(chatId: string, text: string) {
@@ -69,16 +126,84 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "";
 
+  // -------- Verify (creates a session) --------
   if (action === "verify") {
     const body = await req.json().catch(() => ({}));
-    const expected = Deno.env.get("SITE_PASSWORD");
-    const ok = !!expected && body?.password === expected;
-    return json({ ok }, ok ? 200 : 401);
+    const password = typeof body?.password === "string" ? body.password : "";
+    const ok = await verifyPassword(password);
+    if (!ok) return json({ ok: false }, 401);
+    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+    const ip = getIp(req);
+    const geo = await geolocate(ip);
+    await supabase.from("flight_sessions").insert({
+      token,
+      ip: ip || null,
+      country: geo.country ?? null,
+      city: geo.city ?? null,
+      region: geo.region ?? null,
+      user_agent: req.headers.get("user-agent") ?? null,
+    });
+    return json({ ok: true, token });
   }
 
-  if (!checkPassword(req)) return json({ error: "Unauthorized" }, 401);
+  // -------- All other actions require a valid session --------
+  const session = await authedSession(req);
+  if (!session) return json({ error: "Unauthorized" }, 401);
 
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+
+  // -------- Sessions / devices --------
+  if (action === "list-sessions") {
+    const { data, error } = await supabase
+      .from("flight_sessions")
+      .select("id, ip, country, city, region, user_agent, created_at, last_seen")
+      .is("revoked_at", null)
+      .order("last_seen", { ascending: false });
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, sessions: data, current_id: session.id });
+  }
+
+  if (action === "revoke-session") {
+    const id = body?.id;
+    if (typeof id !== "string") return json({ error: "Invalid id" }, 400);
+    const { error } = await supabase
+      .from("flight_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true });
+  }
+
+  if (action === "revoke-all-other-sessions") {
+    const { error } = await supabase
+      .from("flight_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .is("revoked_at", null)
+      .neq("id", session.id);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true });
+  }
+
+  // -------- Change password --------
+  if (action === "change-password") {
+    const current = typeof body?.current === "string" ? body.current : "";
+    const next = typeof body?.next === "string" ? body.next : "";
+    if (!(await verifyPassword(current))) return json({ error: "Current password is incorrect" }, 400);
+    if (next.length < 6) return json({ error: "New password must be at least 6 characters" }, 400);
+    const hash = await sha256(next);
+    const { error } = await supabase
+      .from("flight_site_settings")
+      .update({ password_hash: hash, updated_at: new Date().toISOString() })
+      .eq("id", 1);
+    if (error) return json({ error: error.message }, 500);
+    // Revoke every other session so they have to re-enter the new password
+    await supabase
+      .from("flight_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .is("revoked_at", null)
+      .neq("id", session.id);
+    return json({ ok: true });
+  }
 
   // -------- Recipients --------
   if (action === "add-recipient") {
