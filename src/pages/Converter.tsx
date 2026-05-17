@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import JSZip from "jszip";
 import { Upload, Download, X, FileType, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
@@ -33,6 +33,11 @@ const Converter = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [converting, setConverting] = useState(false);
 
+  // Warm up wawoff2 WASM (Brotli decoder ~1MB) so first conversion isn't slow
+  useEffect(() => {
+    import("wawoff2").then((m: any) => m.default?.decompress?.(new Uint8Array())).catch(() => {});
+  }, []);
+
   const addFiles = useCallback((files: FileList | File[]) => {
     const accepted: Item[] = [];
     for (const f of Array.from(files)) {
@@ -60,23 +65,27 @@ const Converter = () => {
   const convertAll = async () => {
     setConverting(true);
     const pending = items.filter((i) => i.status === "pending" || i.status === "error");
-    for (const item of pending) {
-      setItems((prev) =>
-        prev.map((p) => (p.id === item.id ? { ...p, status: "converting", error: undefined } : p)),
-      );
-      try {
-        const ttf = await convertFontToTtf(item.file);
-        const outName = ttfFileName(item.file.name);
-        setItems((prev) =>
-          prev.map((p) => (p.id === item.id ? { ...p, status: "done", ttf, outName } : p)),
-        );
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Conversion failed";
-        setItems((prev) =>
-          prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: msg } : p)),
-        );
-      }
-    }
+    setItems((prev) =>
+      prev.map((p) =>
+        pending.find((q) => q.id === p.id) ? { ...p, status: "converting", error: undefined } : p,
+      ),
+    );
+    await Promise.all(
+      pending.map(async (item) => {
+        try {
+          const ttf = await convertFontToTtf(item.file);
+          const outName = ttfFileName(item.file.name);
+          setItems((prev) =>
+            prev.map((p) => (p.id === item.id ? { ...p, status: "done", ttf, outName } : p)),
+          );
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Conversion failed";
+          setItems((prev) =>
+            prev.map((p) => (p.id === item.id ? { ...p, status: "error", error: msg } : p)),
+          );
+        }
+      }),
+    );
     setConverting(false);
   };
 
