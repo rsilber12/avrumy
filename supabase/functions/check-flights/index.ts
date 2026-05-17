@@ -1,8 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const REGISTRATIONS = ["N787FZ", "VPCZS"];
-
 type AdsbAircraft = {
   hex?: string;
   flight?: string;
@@ -87,6 +85,9 @@ Deno.serve(async (req) => {
     .select("kind,value");
   const telegrams = (recipients ?? []).filter((r) => r.kind === "telegram").map((r) => r.value);
   const emails = (recipients ?? []).filter((r) => r.kind === "email").map((r) => r.value);
+
+  const { data: tracked } = await supabase.from("tracked_flights").select("registration");
+  const REGISTRATIONS = (tracked ?? []).map((t: { registration: string }) => t.registration);
 
   const results: unknown[] = [];
 
