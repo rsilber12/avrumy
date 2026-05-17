@@ -40,25 +40,21 @@ async function sendTelegram(chatId: string, text: string) {
   return { ok: res.ok, error: res.ok ? null : await res.text() };
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  if (!lovableKey || !resendKey) return { ok: false, error: "resend not configured" };
-  const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": resendKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Flight Tracker <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-  return { ok: res.ok, error: res.ok ? null : await res.text() };
+async function sendEmail(to: string, subject: string, message: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "flight-alert",
+        recipientEmail: to,
+        idempotencyKey: `flight-alert-${to}-${Date.now()}`,
+        templateData: { subject, message },
+      },
+    });
+    if (error) return { ok: false, error: error.message ?? String(error) };
+    return { ok: true, error: null };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 Deno.serve(async (req) => {
