@@ -64,7 +64,7 @@ function AuthGate({ children }: { children: (pw: string) => ReactNode }) {
   if (stored) return <>{children(stored)}</>;
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-6">
+    <div className="flight-tracker-theme grid min-h-screen place-items-center bg-background px-6">
       <Card className="w-full max-w-sm p-6">
         <div className="mb-4 flex items-center gap-2">
           <div className="rounded-lg bg-primary/10 p-2">
@@ -140,7 +140,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flight-tracker-theme min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <header className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-3">

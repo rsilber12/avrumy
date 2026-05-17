@@ -147,3 +147,34 @@
     @apply font-sans;
   }
 }
+
+/* Scoped Flight Tracker theme — matches Flight Alert Watcher project (shadcn slate) */
+.flight-tracker-theme {
+  --background: 0 0% 100%;
+  --foreground: 224 39% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 39% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 39% 13%;
+  --primary: 224 31% 21%;
+  --primary-foreground: 220 14% 98%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 224 31% 21%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 220 14% 96%;
+  --accent-foreground: 224 31% 21%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 220 14% 98%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 220 9% 65%;
+  --radius: 0.625rem;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.flight-tracker-theme * { font-family: inherit; }
+.flight-tracker-theme .font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
