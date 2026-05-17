@@ -33,6 +33,11 @@ const Converter = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [converting, setConverting] = useState(false);
 
+  // Warm up wawoff2 WASM (Brotli decoder ~1MB) so first conversion isn't slow
+  useEffect(() => {
+    import("wawoff2").then((m: any) => m.default?.decompress?.(new Uint8Array())).catch(() => {});
+  }, []);
+
   const addFiles = useCallback((files: FileList | File[]) => {
     const accepted: Item[] = [];
     for (const f of Array.from(files)) {
