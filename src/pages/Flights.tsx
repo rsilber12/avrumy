@@ -464,6 +464,22 @@ function AircraftCard({
         />
       </div>
 
+      {/* Last known location */}
+      {data?.lat != null && data?.lon != null && (
+        <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs"
+          style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--secondary) / 0.3)" }}>
+          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Last known location
+            </div>
+            <div className="mt-0.5 truncate text-foreground">
+              {place ?? "Locating…"}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mt-5 flex items-center justify-between border-t pt-4" style={{ borderColor: "hsl(var(--border))" }}>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <Clock className="h-3 w-3" />
