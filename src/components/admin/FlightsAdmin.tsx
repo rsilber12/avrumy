@@ -6,7 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plane, Trash2, Send, Mail, Bell, Beaker, Lock } from "lucide-react";
+import {
+  Plane,
+  Trash2,
+  Send,
+  Mail,
+  Bell,
+  Beaker,
+  Lock,
+  Monitor,
+  MapPin,
+  KeyRound,
+} from "lucide-react";
 
 type Flight = { id: string; registration: string; label: string | null };
 type Recipient = {
@@ -15,23 +26,70 @@ type Recipient = {
   value: string;
   label: string | null;
 };
+type Session = {
+  id: string;
+  ip: string | null;
+  country: string | null;
+  city: string | null;
+  region: string | null;
+  user_agent: string | null;
+  created_at: string;
+  last_seen: string;
+};
 
 const SESSION_KEY = "flights_site_password";
+const TOKEN_KEY = "flights_session_token";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-async function callApi(action: string, body: unknown, password: string) {
+async function callApi(action: string, body: unknown, password: string, token?: string | null) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/flights-api?action=${action}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-site-password": password,
+      "x-session-token": token ?? sessionStorage.getItem(TOKEN_KEY) ?? "",
       apikey: SUPABASE_ANON,
       Authorization: `Bearer ${SUPABASE_ANON}`,
     },
     body: JSON.stringify(body),
   });
   return { ok: res.ok, data: await res.json().catch(() => ({} as any)) };
+}
+
+function friendlyUA(ua: string | null): string {
+  if (!ua) return "Unknown device";
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Chrome\//.test(ua) && !/Chromium/.test(ua)
+    ? "Chrome"
+    : /Firefox\//.test(ua)
+    ? "Firefox"
+    : /Safari\//.test(ua)
+    ? "Safari"
+    : "Browser";
+  const os = /Windows/.test(ua)
+    ? "Windows"
+    : /Mac OS X/.test(ua)
+    ? "macOS"
+    : /Android/.test(ua)
+    ? "Android"
+    : /iPhone|iPad|iOS/.test(ua)
+    ? "iOS"
+    : /Linux/.test(ua)
+    ? "Linux"
+    : "Unknown";
+  return `${browser} · ${os}`;
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 const FlightsAdmin = () => {
@@ -43,6 +101,8 @@ const FlightsAdmin = () => {
 
   const [flights, setFlights] = useState<Flight[]>([]);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [reg, setReg] = useState("");
   const [regLabel, setRegLabel] = useState("");
   const [recKind, setRecKind] = useState<"telegram" | "email">("email");
@@ -51,6 +111,25 @@ const FlightsAdmin = () => {
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
 
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [newPw2, setNewPw2] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
+
+  const loadSessions = async () => {
+    const { ok, data } = await callApi("list-sessions", {}, password!);
+    if (ok) {
+      setSessions((data?.sessions ?? []) as Session[]);
+      setCurrentSessionId(data?.current_id ?? null);
+    } else if ((data as any)?.error === "Unauthorized") {
+      // Session was revoked
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      setPassword(null);
+      toast.error("Your session was revoked. Please sign in again.");
+    }
+  };
+
   const load = async () => {
     const [{ data: f }, { data: r }] = await Promise.all([
       supabase.from("tracked_flights").select("*").order("created_at"),
@@ -58,6 +137,7 @@ const FlightsAdmin = () => {
     ]);
     setFlights((f ?? []) as Flight[]);
     setRecipients((r ?? []) as Recipient[]);
+    await loadSessions();
   };
 
   useEffect(() => {
@@ -66,10 +146,11 @@ const FlightsAdmin = () => {
 
   const unlock = async () => {
     setVerifying(true);
-    const { ok } = await callApi("verify", { password: pwInput }, pwInput);
+    const { ok, data } = await callApi("verify", { password: pwInput }, pwInput, "");
     setVerifying(false);
-    if (ok) {
+    if (ok && data?.token) {
       sessionStorage.setItem(SESSION_KEY, pwInput);
+      sessionStorage.setItem(TOKEN_KEY, data.token);
       setPassword(pwInput);
     } else {
       toast.error("Wrong password");
@@ -137,6 +218,48 @@ const FlightsAdmin = () => {
     if (failed.length === 0)
       toast.success(`Test sent to ${tg.length} Telegram + ${em.length} email recipient(s)`);
     else toast.warning(`Sent with ${failed.length} failure(s) — check edge function logs`);
+  };
+
+  const revokeSession = async (id: string) => {
+    const { ok, data } = await callApi("revoke-session", { id }, password!);
+    if (!ok) return toast.error(data?.error ?? "Failed");
+    if (id === currentSessionId) {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      setPassword(null);
+      toast.success("Signed out on this device");
+      return;
+    }
+    toast.success("Device signed out");
+    await loadSessions();
+  };
+
+  const revokeAllOthers = async () => {
+    const { ok, data } = await callApi("revoke-all-other-sessions", {}, password!);
+    if (!ok) return toast.error(data?.error ?? "Failed");
+    toast.success("All other devices signed out");
+    await loadSessions();
+  };
+
+  const changePassword = async () => {
+    if (newPw !== newPw2) return toast.error("New passwords don't match");
+    if (newPw.length < 6) return toast.error("New password must be at least 6 characters");
+    setChangingPw(true);
+    const { ok, data } = await callApi(
+      "change-password",
+      { current: currentPw, next: newPw },
+      password!,
+    );
+    setChangingPw(false);
+    if (!ok) return toast.error(data?.error ?? "Failed");
+    // Update locally so this session keeps working
+    sessionStorage.setItem(SESSION_KEY, newPw);
+    setPassword(newPw);
+    setCurrentPw("");
+    setNewPw("");
+    setNewPw2("");
+    toast.success("Password changed. All other devices were signed out.");
+    await loadSessions();
   };
 
   if (!password) {
@@ -289,6 +412,110 @@ const FlightsAdmin = () => {
           </div>
           <Button onClick={testSystem} disabled={testing}>
             {testing ? "Sending…" : "Send test alert"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Devices / Sessions */}
+      <Card className="p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Monitor className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Signed-in devices</h2>
+          <Badge variant="outline" className="ml-auto">{sessions.length}</Badge>
+        </div>
+        {sessions.length === 0 ? (
+          <div className="rounded-md border p-4 text-sm text-muted-foreground">
+            No active devices.
+          </div>
+        ) : (
+          <div className="divide-y rounded-md border">
+            {sessions.map((s) => {
+              const isCurrent = s.id === currentSessionId;
+              const loc = [s.city, s.region, s.country].filter(Boolean).join(", ") || "Unknown location";
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{friendlyUA(s.user_agent)}</span>
+                      {isCurrent && (
+                        <Badge variant="secondary" className="text-[10px]">This device</Badge>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span>{loc}</span>
+                      {s.ip && <span className="font-mono">· {s.ip}</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Signed in {timeAgo(s.created_at)} · last active {timeAgo(s.last_seen)}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => revokeSession(s.id)}
+                    title={isCurrent ? "Sign out this device" : "Remove device"}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {sessions.length > 1 && (
+          <div className="mt-4 flex justify-end">
+            <Button variant="outline" size="sm" onClick={revokeAllOthers}>
+              Sign out all other devices
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Change password */}
+      <Card className="p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <KeyRound className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Change page password</h2>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Changing the password will sign out every other device immediately.
+        </p>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div>
+            <Label htmlFor="cur">Current password</Label>
+            <Input
+              id="cur"
+              type="password"
+              value={currentPw}
+              onChange={(e) => setCurrentPw(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="np1">New password</Label>
+            <Input
+              id="np1"
+              type="password"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="np2">Confirm new password</Label>
+            <Input
+              id="np2"
+              type="password"
+              value={newPw2}
+              onChange={(e) => setNewPw2(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={changePassword}
+            disabled={changingPw || !currentPw || !newPw || !newPw2}
+          >
+            {changingPw ? "Updating…" : "Update password"}
           </Button>
         </div>
       </Card>

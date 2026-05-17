@@ -35,21 +35,23 @@ type Alert = { id: string; registration: string; kind: string; message: string; 
 type TrackedFlight = { id: string; registration: string; label: string | null };
 
 const SESSION_KEY = "flights_site_password";
+const TOKEN_KEY = "flights_session_token";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-async function callApi(action: string, body: unknown, password: string) {
+async function callApi(action: string, body: unknown, password: string, token?: string | null) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/flights-api?action=${action}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-site-password": password,
+      "x-session-token": token ?? sessionStorage.getItem(TOKEN_KEY) ?? "",
       apikey: SUPABASE_ANON,
       Authorization: `Bearer ${SUPABASE_ANON}`,
     },
     body: JSON.stringify(body),
   });
-  return { ok: res.ok, data: await res.json().catch(() => ({})) };
+  return { ok: res.ok, data: await res.json().catch(() => ({} as any)) };
 }
 
 /* ──────────────────────────── AUTH GATE ──────────────────────────── */
@@ -64,10 +66,11 @@ function AuthGate({ children }: { children: (pw: string) => ReactNode }) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const { ok } = await callApi("verify", { password }, password);
+    const { ok, data } = await callApi("verify", { password }, password, "");
     setSubmitting(false);
-    if (ok) {
+    if (ok && data?.token) {
       sessionStorage.setItem(SESSION_KEY, password);
+      sessionStorage.setItem(TOKEN_KEY, data.token);
       setStored(password);
     } else {
       setError("Wrong password");
