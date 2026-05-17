@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.flights-api]
 verify_jwt = false
+
+[functions.process-email-queue]
+verify_jwt = true
