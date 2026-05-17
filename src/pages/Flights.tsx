@@ -66,10 +66,11 @@ function AuthGate({ children }: { children: (pw: string) => ReactNode }) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const { ok } = await callApi("verify", { password }, password);
+    const { ok, data } = await callApi("verify", { password }, password, "");
     setSubmitting(false);
-    if (ok) {
+    if (ok && data?.token) {
       sessionStorage.setItem(SESSION_KEY, password);
+      sessionStorage.setItem(TOKEN_KEY, data.token);
       setStored(password);
     } else {
       setError("Wrong password");
