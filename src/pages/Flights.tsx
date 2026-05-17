@@ -140,7 +140,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flight-tracker-theme min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <header className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
