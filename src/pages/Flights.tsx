@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plane, Radio, RefreshCw, Bell, Trash2, Send, Mail, Lock } from "lucide-react";
+import { Plane, Radio, RefreshCw, Lock } from "lucide-react";
 
 type Aircraft = {
   registration: string;
@@ -21,17 +21,9 @@ type Aircraft = {
   last_checked: string;
 };
 type Alert = { id: string; registration: string; kind: string; message: string; created_at: string };
-type Recipient = {
-  id: string;
-  kind: "telegram" | "email";
-  value: string;
-  label: string | null;
-  created_at: string;
-};
+type TrackedFlight = { id: string; registration: string; label: string | null };
 
-const TRACKED = ["N787FZ", "VPCZS"];
 const SESSION_KEY = "flights_site_password";
-
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
@@ -102,27 +94,23 @@ function AuthGate({ children }: { children: (pw: string) => ReactNode }) {
   );
 }
 
-function Dashboard({ password }: { password: string }) {
+function Dashboard() {
+  const [tracked, setTracked] = useState<TrackedFlight[]>([]);
   const [aircraft, setAircraft] = useState<Record<string, Aircraft | undefined>>({});
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [checking, setChecking] = useState(false);
-  const [kind, setKind] = useState<"telegram" | "email">("telegram");
-  const [value, setValue] = useState("");
-  const [label, setLabel] = useState("");
-  const [adding, setAdding] = useState(false);
 
   const load = async () => {
-    const [{ data: ac }, { data: al }, { data: rec }] = await Promise.all([
+    const [{ data: tf }, { data: ac }, { data: al }] = await Promise.all([
+      supabase.from("tracked_flights").select("*").order("created_at"),
       supabase.from("aircraft_state").select("*"),
       supabase.from("alert_log").select("*").order("created_at", { ascending: false }).limit(20),
-      supabase.from("alert_recipients").select("*").order("created_at", { ascending: true }),
     ]);
+    setTracked((tf ?? []) as TrackedFlight[]);
     const map: Record<string, Aircraft> = {};
     (ac ?? []).forEach((a: any) => (map[a.registration] = a as Aircraft));
     setAircraft(map);
     setAlerts((al ?? []) as Alert[]);
-    setRecipients((rec ?? []) as Recipient[]);
   };
 
   useEffect(() => {
@@ -131,12 +119,11 @@ function Dashboard({ password }: { password: string }) {
       .channel("flight-tracker")
       .on("postgres_changes", { event: "*", schema: "public", table: "aircraft_state" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "alert_log" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "alert_recipients" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracked_flights" }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const runCheckNow = async () => {
@@ -152,36 +139,6 @@ function Dashboard({ password }: { password: string }) {
     setChecking(false);
   };
 
-  const addRecipient = async () => {
-    if (!value.trim()) return toast.error("Enter a value");
-    setAdding(true);
-    const { ok, data } = await callApi(
-      "add-recipient",
-      { kind, value: value.trim(), label: label.trim() || null },
-      password,
-    );
-    if (ok) {
-      toast.success(kind === "telegram" ? "Added. Check Telegram for confirmation." : "Added.");
-      setValue("");
-      setLabel("");
-      await load();
-    } else {
-      toast.error((data as any)?.error ?? "Failed to add");
-    }
-    setAdding(false);
-  };
-
-  const removeRecipient = async (id: string) => {
-    const { ok } = await callApi("delete-recipient", { id }, password);
-    if (ok) {
-      toast.success("Removed");
-      await load();
-    } else toast.error("Failed to remove");
-  };
-
-  const telegrams = recipients.filter((r) => r.kind === "telegram");
-  const emails = recipients.filter((r) => r.kind === "email");
-
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-10">
@@ -193,7 +150,7 @@ function Dashboard({ password }: { password: string }) {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Flight Tracker</h1>
               <p className="text-sm text-muted-foreground">
-                Watching N787FZ &amp; VPCZS · Alerts every 5 min via Telegram &amp; email
+                Tracking {tracked.length} aircraft · Alerts every 5 min · Manage in admin
               </p>
             </div>
           </div>
@@ -204,81 +161,15 @@ function Dashboard({ password }: { password: string }) {
         </header>
 
         <section className="mb-10 grid gap-4 md:grid-cols-2">
-          {TRACKED.map((reg) => (
-            <AircraftCard key={reg} reg={reg} data={aircraft[reg]} />
-          ))}
-        </section>
-
-        <section className="mb-10">
-          <Card className="p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Alert delivery</h2>
-            </div>
-            <div className="grid gap-4 md:grid-cols-[160px_1fr_1fr_auto] md:items-end">
-              <div>
-                <Label htmlFor="kind">Type</Label>
-                <select
-                  id="kind"
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value as "telegram" | "email")}
-                  className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="telegram">Telegram</option>
-                  <option value="email">Email</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="value">
-                  {kind === "telegram" ? "Chat ID (numeric)" : "Email address"}
-                </Label>
-                <Input
-                  id="value"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  placeholder={kind === "telegram" ? "e.g. 123456789" : "you@example.com"}
-                />
-              </div>
-              <div>
-                <Label htmlFor="label">Label (optional)</Label>
-                <Input
-                  id="label"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  placeholder="e.g. Abe's phone"
-                />
-              </div>
-              <Button onClick={addRecipient} disabled={adding}>
-                {adding ? "Adding…" : "Add"}
-              </Button>
-            </div>
-            {kind === "telegram" && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Get your chat ID by messaging{" "}
-                <a href="https://t.me/userinfobot" target="_blank" rel="noopener" className="underline">
-                  @userinfobot
-                </a>
-                . The user must also start a chat with the bot you connected.
-              </p>
-            )}
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <RecipientList
-                title="Telegram"
-                icon={<Send className="h-4 w-4" />}
-                items={telegrams}
-                onRemove={removeRecipient}
-                empty="No Telegram recipients yet."
-              />
-              <RecipientList
-                title="Email"
-                icon={<Mail className="h-4 w-4" />}
-                items={emails}
-                onRemove={removeRecipient}
-                empty="No email recipients yet."
-              />
-            </div>
-          </Card>
+          {tracked.length === 0 ? (
+            <Card className="p-6 text-sm text-muted-foreground md:col-span-2">
+              No flights tracked yet. Add some in the admin panel.
+            </Card>
+          ) : (
+            tracked.map((t) => (
+              <AircraftCard key={t.id} reg={t.registration} label={t.label} data={aircraft[t.registration]} />
+            ))
+          )}
         </section>
 
         <section>
@@ -289,7 +180,7 @@ function Dashboard({ password }: { password: string }) {
           <Card className="divide-y">
             {alerts.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground">
-                No alerts yet. They will appear here when either aircraft lifts off or shows activity.
+                No alerts yet. They will appear here when any tracked aircraft lifts off or shows activity.
               </div>
             ) : (
               alerts.map((a) => (
@@ -314,50 +205,7 @@ function Dashboard({ password }: { password: string }) {
   );
 }
 
-function RecipientList({
-  title,
-  icon,
-  items,
-  onRemove,
-  empty,
-}: {
-  title: string;
-  icon: ReactNode;
-  items: Recipient[];
-  onRemove: (id: string) => void;
-  empty: string;
-}) {
-  return (
-    <Card>
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        {icon}
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <Badge variant="outline" className="ml-auto">
-          {items.length}
-        </Badge>
-      </div>
-      {items.length === 0 ? (
-        <div className="p-4 text-xs text-muted-foreground">{empty}</div>
-      ) : (
-        <div className="divide-y">
-          {items.map((r) => (
-            <div key={r.id} className="flex items-center justify-between px-4 py-2">
-              <div className="min-w-0">
-                <div className="truncate font-mono text-sm">{r.value}</div>
-                {r.label && <div className="text-xs text-muted-foreground">{r.label}</div>}
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => onRemove(r.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-function AircraftCard({ reg, data }: { reg: string; data?: Aircraft }) {
+function AircraftCard({ reg, label, data }: { reg: string; label: string | null; data?: Aircraft }) {
   const live =
     data && data.last_seen && Date.now() - new Date(data.last_seen).getTime() < 15 * 60_000;
   return (
@@ -365,6 +213,7 @@ function AircraftCard({ reg, data }: { reg: string; data?: Aircraft }) {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <h3 className="font-mono text-xl font-bold">{reg}</h3>
+          {label && <p className="text-sm text-muted-foreground">{label}</p>}
           {data?.flight && <p className="text-sm text-muted-foreground">Flight {data.flight}</p>}
         </div>
         {live ? (
@@ -407,5 +256,5 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export default function Flights() {
-  return <AuthGate>{(pw) => <Dashboard password={pw} />}</AuthGate>;
+  return <AuthGate>{() => <Dashboard />}</AuthGate>;
 }
