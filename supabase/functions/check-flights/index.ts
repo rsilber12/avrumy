@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
         message: plain,
       });
       for (const cid of telegrams) await sendTelegram(cid, a.message);
-      for (const em of emails) await sendEmail(em, `Flight alert: ${reg} ${a.kind}`, `<p>${a.message}</p>`);
+      for (const em of emails) await sendEmail(em, `Flight alert: ${reg} ${a.kind}`, plain);
     }
 
     results.push({ reg, seen: true, onGround, altitude, alerts: alerts.length });
