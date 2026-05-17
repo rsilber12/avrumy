@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       results.telegram.push({ value: r.value, ...out });
     }
     for (const r of em) {
-      const out = await sendEmail(r.value, subject, html);
+      const out = await sendEmail(r.value, subject, text);
       results.email.push({ value: r.value, ...out });
     }
     await supabase.from("alert_log").insert({
