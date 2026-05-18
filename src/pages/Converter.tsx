@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import JSZip from "jszip";
 import { Upload, Download, X, FileType, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
@@ -32,12 +32,6 @@ const Converter = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [converting, setConverting] = useState(false);
-
-  // Preload the wawoff2 module (WASM init) without invoking decompress on empty input,
-  // which would abort the emscripten runtime and break future calls.
-  useEffect(() => {
-    import("wawoff2").catch(() => {});
-  }, []);
 
   const addFiles = useCallback((files: FileList | File[]) => {
     const accepted: Item[] = [];
