@@ -1,4 +1,4 @@
-import { inflateSync } from "fflate";
+import { unzlibSync } from "fflate";
 import { Font, woff2 } from "fonteditor-core";
 
 const WOFF2_WASM_URL = "/wasm/fonteditor-woff2.wasm";
@@ -46,7 +46,7 @@ export async function convertFontToTtf(file: File): Promise<Uint8Array> {
     hinting: true,
     kerning: true,
     compound2simple: false,
-    inflate: (data) => Array.from(inflateSync(new Uint8Array(data))),
+    inflate: (data) => Array.from(unzlibSync(new Uint8Array(data))),
   });
 
   return toUint8Array(font.write({ type: "ttf", hinting: true, kerning: true, toBuffer: false }));
