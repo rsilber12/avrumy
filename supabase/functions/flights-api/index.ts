@@ -263,6 +263,9 @@ Deno.serve(async (req) => {
 
   // -------- Test alert --------
   if (action === "test-alert") {
+    return json({ error: "Flight tracker alerts are disabled." }, 503);
+  }
+  if (false) {
     const { data: recipients } = await supabase.from("alert_recipients").select("kind,value");
     const tg = (recipients ?? []).filter((r) => r.kind === "telegram");
     const em = (recipients ?? []).filter((r) => r.kind === "email");
