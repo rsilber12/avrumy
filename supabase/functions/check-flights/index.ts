@@ -77,6 +77,13 @@ async function sendEmail(to: string, subject: string, message: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Flight tracker disabled: no polling, no alerts, no emails.
+  return new Response(
+    JSON.stringify({ ok: false, disabled: true, message: "Flight tracker is disabled." }),
+    { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+  // eslint-disable-next-line no-unreachable
+
   const { data: recipients } = await supabase
     .from("alert_recipients")
     .select("kind,value");
